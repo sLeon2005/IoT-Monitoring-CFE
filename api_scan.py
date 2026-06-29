@@ -1,3 +1,5 @@
+# Código por Sebastián León para EEPAT de México S.A. de C.V.
+
 import requests
 from bs4 import BeautifulSoup
 
