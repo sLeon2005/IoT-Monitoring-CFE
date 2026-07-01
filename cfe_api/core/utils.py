@@ -1,5 +1,5 @@
 """
-Funciones auxiliares compartidas por toda la aplicación.
+Funciones auxiliares compartidas por toda la aplicacion.
 """
 
 import re

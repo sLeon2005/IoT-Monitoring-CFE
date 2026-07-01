@@ -1,18 +1,22 @@
-from core.session import CFESession
-from models.concurso import Concurso
+from cfe_api.core.session import CFESession
+from cfe_api.models.concurso import Concurso
 
 
 class ConcursosService:
 
     ENDPOINT = (
-        "https://msc.cfe.mx/Aplicaciones/NCFE/"
-        "Concursos/Procedure/getProcBusqueda"
+        "https://msc.cfe.mx/Aplicaciones/NCFE/" "Concursos/Procedure/getProcBusqueda"
     )
 
     def __init__(self, session: CFESession):
         self.session = session
 
-    def buscar_por_fecha(self, fecha: str):
+    def buscar(
+        self,
+        fecha_publicacion: str | None = None,
+        numero: str | None = None,
+        descripcion: str | None = None,
+    ):
 
         # Replica el payload enviado por el portal de CFE.
         # Solo modificamos la fecha; el resto son los valores por defecto.
@@ -21,10 +25,10 @@ class ConcursosService:
             "TipoProcedimientoClave": "",
             "TipoContratacionClave": "",
             "IdEntidadFederativa": "0",
-            "Numero": "",
-            "Descripcion": "",
+            "Numero": numero or "",
+            "Descripcion": descripcion or "",
             "EstadoProcedimientoContratacionClave": "0",
-            "FechaPublicacion": fecha,
+            "FechaPublicacion": fecha_publicacion or "",
             "FechaPublicacionIni": "",
             "FechaPublicacionFin": "",
             "TestigoSocial": "2",
@@ -45,7 +49,4 @@ class ConcursosService:
 
         response.raise_for_status()
 
-        return [
-            Concurso.from_dict(item)
-            for item in response.json()
-        ]
+        return [Concurso.from_dict(item) for item in response.json()]

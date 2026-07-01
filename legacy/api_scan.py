@@ -1,9 +1,16 @@
-# Código por Sebastián León para EEPAT de México S.A. de C.V.
+"""
+Script historico de ingenieria inversa.
+
+Este archivo queda como referencia del descubrimiento inicial del endpoint.
+El codigo de aplicacion ya no debe depender de este script; debe usar cfe_api.
+"""
 
 import requests
 from bs4 import BeautifulSoup
 
+
 URL = "https://msc.cfe.mx/Aplicaciones/NCFE/Concursos/"
+POST_URL = "https://msc.cfe.mx/Aplicaciones/NCFE/Concursos/Procedure/getProcBusqueda"
 
 session = requests.Session()
 
@@ -11,7 +18,6 @@ response = session.get(URL)
 response.raise_for_status()
 
 soup = BeautifulSoup(response.text, "html.parser")
-
 token = soup.find("input", {"name": "__RequestVerificationToken"})
 
 print("Status:", response.status_code)
@@ -20,9 +26,7 @@ if token:
     print("Token encontrado:")
     print(token["value"])
 else:
-    print("No se encontró el token.")
-
-POST_URL = "https://msc.cfe.mx/Aplicaciones/NCFE/Concursos/Procedure/getProcBusqueda"
+    raise RuntimeError("No se encontro el token CSRF.")
 
 payload = {
     "__RequestVerificationToken": token["value"],
@@ -32,7 +36,7 @@ payload = {
     "Numero": "",
     "Descripcion": "",
     "EstadoProcedimientoContratacionClave": "0",
-    "FechaPublicacion": "2026-06-29",   # usa la fecha que quieras consultar
+    "FechaPublicacion": "2026-06-29",
     "FechaPublicacionIni": "",
     "FechaPublicacionFin": "",
     "TestigoSocial": "2",
@@ -45,10 +49,10 @@ headers = {
     "Referer": URL,
 }
 
-r = session.post(POST_URL, data=payload, headers=headers)
-r.raise_for_status()
+result = session.post(POST_URL, data=payload, headers=headers)
+result.raise_for_status()
 
-datos = r.json()
+datos = result.json()
 
 print(f"Se encontraron {len(datos)} concursos")
 

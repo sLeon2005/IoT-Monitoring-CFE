@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from core.utils import parse_aspnet_date
+from cfe_api.core.utils import parse_aspnet_date
 
 
 @dataclass(slots=True)

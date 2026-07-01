@@ -1,12 +1,12 @@
 """
-Módulo encargado de administrar la sesión HTTP con CFE.
+Modulo encargado de administrar la sesion HTTP con CFE.
 
 Responsabilidades:
 - Crear y mantener una requests.Session()
-- Obtener automáticamente el __RequestVerificationToken
-- Exponer métodos GET y POST reutilizables
+- Obtener automaticamente el __RequestVerificationToken
+- Exponer metodos GET y POST reutilizables
 
-Este módulo NO conoce ningún endpoint específico.
+Este modulo NO conoce ningun endpoint especifico.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 
 class CFESession:
-    """Administra una sesión HTTP con el portal de CFE."""
+    """Administra una sesion HTTP con el portal de CFE."""
 
     BASE_URL = "https://msc.cfe.mx"
     HOME_URL = f"{BASE_URL}/Aplicaciones/NCFE/Concursos/"
@@ -28,7 +28,7 @@ class CFESession:
 
     def initialize(self) -> None:
         """
-        Inicializa la sesión y obtiene el token CSRF.
+        Inicializa la sesion y obtiene el token CSRF.
 
         Debe llamarse una sola vez al iniciar.
         """
@@ -60,13 +60,13 @@ class CFESession:
 
         if self.csrf_token is None:
             raise RuntimeError(
-                "La sesión aún no ha sido inicializada."
+                "La sesion aun no ha sido inicializada."
             )
 
         return self.csrf_token
 
     def get(self, url: str, **kwargs):
-        """Realiza una petición GET utilizando la sesión."""
+        """Realiza una peticion GET utilizando la sesion."""
 
         return self.session.get(
             url,
@@ -75,7 +75,7 @@ class CFESession:
         )
 
     def post(self, url: str, **kwargs):
-        """Realiza una petición POST utilizando la sesión."""
+        """Realiza una peticion POST utilizando la sesion."""
 
         return self.session.post(
             url,
