@@ -36,7 +36,7 @@ Copia `.env.example` a `.env` y ajusta los valores necesarios:
 ```env
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
-MONITOR_DB_PATH=monitor.sqlite3
+MONITOR_DB_PATH=data/monitor.sqlite3
 MONITOR_INTERVAL_SECONDS=300
 MONITOR_LOG_LEVEL=INFO
 ```
@@ -96,7 +96,7 @@ python -m monitor.database.inspect --limit 10
 Usar una base especifica:
 
 ```powershell
-python -m monitor.database.inspect --db monitor.sqlite3
+python -m monitor.database.inspect --db data/monitor.sqlite3
 ```
 
 ## Notas de arquitectura

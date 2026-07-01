@@ -16,7 +16,7 @@ class MonitorConfig:
     @classmethod
     def from_env(cls) -> "MonitorConfig":
         return cls(
-            db_path=os.getenv("MONITOR_DB_PATH", "monitor.sqlite3"),
+            db_path=os.getenv("MONITOR_DB_PATH", "data/monitor.sqlite3"),
             interval_seconds=_get_int("MONITOR_INTERVAL_SECONDS", 300),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN"),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID"),
