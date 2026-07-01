@@ -79,6 +79,26 @@ python -m monitor.main
 
 El monitor consulta CFE, guarda concursos en SQLite y solo emite eventos para concursos nuevos.
 
+## Inspeccionar SQLite
+
+Listar concursos guardados:
+
+```powershell
+python -m monitor.database.inspect
+```
+
+Limitar la cantidad de filas:
+
+```powershell
+python -m monitor.database.inspect --limit 10
+```
+
+Usar una base especifica:
+
+```powershell
+python -m monitor.database.inspect --db monitor.sqlite3
+```
+
 ## Notas de arquitectura
 
 - `cfe_api` no conoce Telegram, SQLite, dashboard, GPIO ni Raspberry Pi.
