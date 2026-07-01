@@ -27,8 +27,6 @@ monitor/
 legacy/
   api_scan.py      script historico de ingenieria inversa
 
-scripts/
-  test_telegram.py prueba manual del notificador Telegram
 ```
 
 ## Configuracion
@@ -80,14 +78,6 @@ python -m monitor.main
 ```
 
 El monitor consulta CFE, guarda concursos en SQLite y solo emite eventos para concursos nuevos.
-
-## Prueba manual de Telegram
-
-Requiere `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en `.env`.
-
-```powershell
-python -m scripts.test_telegram
-```
 
 ## Notas de arquitectura
 
