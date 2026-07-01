@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CFE Monitor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="screen">
+      <header class="topbar">
+        <section class="brand">
+          <p class="eyebrow">Monitoreo CFE</p>
+          <h1>Concursos Publicados</h1>
+        </section>
+        <section class="clock" aria-label="Fecha y hora actual">
+          <strong id="clock-time">--:--:--</strong>
+          <span id="clock-date">--/--/----</span>
+        </section>
+        <section class="weather" aria-label="Clima">
+          <img
+            class="weather-icon"
+            id="weather-icon"
+            src="/static/weather-icons/unknown.svg"
+            alt="Clima no disponible"
+          >
+          <div>
+            <strong id="weather-temp">--°C</strong>
+            <span id="weather-condition">Clima pendiente</span>
+          </div>
+        </section>
+        <section class="status" id="status-panel">
+          <span class="status-dot" id="status-dot"></span>
+          <div>
+            <p class="status-label" id="status-label">Cargando</p>
+            <p class="status-detail" id="status-detail">Sin datos todavia</p>
+          </div>
+        </section>
+      </header>
+
+      <section class="metrics">
+        <div>
+          <span class="metric-label">Concursos en pantalla</span>
+          <strong id="metric-count">0</strong>
+        </div>
+        <div>
+          <span class="metric-label">Ultima publicacion</span>
+          <strong id="metric-last">--</strong>
+        </div>
+        <div>
+          <span class="metric-label">Actualizacion</span>
+          <strong id="metric-updated">--</strong>
+        </div>
+        <div>
+          <span class="metric-label">Conexion CFE</span>
+          <strong id="metric-source">--</strong>
+        </div>
+      </section>
+
+      <section class="board">
+        <table>
+          <thead>
+            <tr>
+              <th>Numero</th>
+              <th>Entidad</th>
+              <th>Estado</th>
+              <th>Tipo</th>
+              <th>Publicacion</th>
+              <th>Monto</th>
+              <th>Proveedor</th>
+              <th>Descripcion</th>
+            </tr>
+          </thead>
+          <tbody id="concursos-body">
+            <tr>
+              <td colspan="8" class="empty">Cargando concursos...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>

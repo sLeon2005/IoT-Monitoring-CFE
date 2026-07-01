@@ -12,6 +12,9 @@ class MonitorConfig:
     telegram_bot_token: str | None
     telegram_chat_id: str | None
     log_level: str
+    dashboard_host: str
+    dashboard_port: int
+    dashboard_refresh_seconds: int
 
     @classmethod
     def from_env(cls) -> "MonitorConfig":
@@ -21,6 +24,9 @@ class MonitorConfig:
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN"),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID"),
             log_level=os.getenv("MONITOR_LOG_LEVEL", "INFO"),
+            dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
+            dashboard_port=_get_int("DASHBOARD_PORT", 8000),
+            dashboard_refresh_seconds=_get_int("DASHBOARD_REFRESH_SECONDS", 30),
         )
 
     @property

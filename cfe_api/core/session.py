@@ -14,6 +14,8 @@ from __future__ import annotations
 import requests
 from bs4 import BeautifulSoup
 
+from cfe_api.core.errors import CFEAPIError, CFEBlockedError
+
 
 class CFESession:
     """Administra una sesion HTTP con el portal de CFE."""
@@ -24,6 +26,16 @@ class CFESession:
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
         self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/126.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+            }
+        )
         self.csrf_token: str | None = None
 
     def initialize(self) -> None:
@@ -38,7 +50,7 @@ class CFESession:
             timeout=self.timeout
         )
 
-        response.raise_for_status()
+        self._raise_for_status(response, "inicializar sesion CFE")
 
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -82,3 +94,30 @@ class CFESession:
             timeout=self.timeout,
             **kwargs
         )
+
+    @staticmethod
+    def _raise_for_status(response: requests.Response, context: str) -> None:
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            snippet = " ".join(response.text[:300].split())
+            message = (
+                f"No fue posible {context}. "
+                f"HTTP {response.status_code}. Respuesta: {snippet}"
+            )
+
+            if response.status_code == 403 or _looks_like_waf_block(response.text):
+                raise CFEBlockedError(message) from exc
+
+            raise CFEAPIError(message) from exc
+
+
+def _looks_like_waf_block(body: str) -> bool:
+    markers = (
+        "NOINDEX, NOFOLLOW",
+        "incap_ses",
+        "visid_incap",
+        "_Incapsula_Resource",
+    )
+
+    return any(marker in body for marker in markers)

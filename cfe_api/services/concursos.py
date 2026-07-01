@@ -37,6 +37,8 @@ class ConcursosService:
         }
 
         headers = {
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Origin": self.session.BASE_URL,
             "X-Requested-With": "XMLHttpRequest",
             "Referer": self.session.HOME_URL,
         }
@@ -47,6 +49,6 @@ class ConcursosService:
             headers=headers,
         )
 
-        response.raise_for_status()
+        self.session._raise_for_status(response, "consultar concursos")
 
         return [Concurso.from_dict(item) for item in response.json()]

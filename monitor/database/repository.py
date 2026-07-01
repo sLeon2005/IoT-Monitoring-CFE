@@ -44,6 +44,14 @@ class ConcursoRepository:
                 ON concursos(fecha_publicacion)
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS monitor_status (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+                """
+            )
 
     def exists(self, concurso_id: int) -> bool:
         with self._connect() as connection:
@@ -118,6 +126,56 @@ class ConcursoRepository:
             ).fetchall()
 
         return rows
+
+    def list_by_publication_date(
+        self,
+        fecha_publicacion: str,
+        limit: int = 50,
+    ) -> list[sqlite3.Row]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM concursos
+                WHERE substr(fecha_publicacion, 1, 10) = ?
+                ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
+                LIMIT ?
+                """,
+                (fecha_publicacion, limit),
+            ).fetchall()
+
+        return rows
+
+    def set_monitor_status(self, status: str, message: str) -> None:
+        updated_at = datetime.now().isoformat(timespec="seconds")
+
+        with self._connect() as connection:
+            connection.executemany(
+                """
+                INSERT INTO monitor_status(key, value)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """,
+                (
+                    ("status", status),
+                    ("message", message),
+                    ("updated_at", updated_at),
+                ),
+            )
+
+    def get_monitor_status(self) -> dict[str, str | None]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT key, value FROM monitor_status"
+            ).fetchall()
+
+        values = {row["key"]: row["value"] for row in rows}
+
+        return {
+            "status": values.get("status", "unknown"),
+            "message": values.get("message", "Monitor sin estado registrado."),
+            "updated_at": values.get("updated_at"),
+        }
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:

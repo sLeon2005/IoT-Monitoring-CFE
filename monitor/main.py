@@ -5,7 +5,9 @@ import logging
 import time
 from datetime import datetime
 
+from cfe_api.core.errors import CFEAPIError, CFEBlockedError
 from monitor.config import MonitorConfig, load_env_file
+from monitor.database.repository import ConcursoRepository
 from monitor.monitor import CFEMonitor
 from monitor.notifications.telegram import TelegramNotifier
 
@@ -71,6 +73,8 @@ def main() -> None:
     logger.info("Base SQLite: %s", config.db_path)
     logger.info("Intervalo: %s segundos", config.interval_seconds)
     monitor: CFEMonitor | None = None
+    repository = ConcursoRepository(config.db_path)
+    repository.initialize()
 
     while True:
         if monitor is None:
@@ -80,8 +84,37 @@ def main() -> None:
                     notifiers=build_notifiers(config),
                 )
                 logger.info("Sesion CFE inicializada correctamente.")
+                repository.set_monitor_status(
+                    "connected",
+                    "Sesion CFE inicializada correctamente.",
+                )
+            except CFEBlockedError as exc:
+                logger.warning("CFE bloqueo la sesion HTTP: %s", exc)
+                repository.set_monitor_status(
+                    "blocked",
+                    "CFE bloqueo la sesion HTTP. Se reintentara despues.",
+                )
+
+                if args.once:
+                    break
+
+                time.sleep(config.interval_seconds)
+                continue
+            except CFEAPIError as exc:
+                logger.warning("Error esperado al inicializar CFE: %s", exc)
+                repository.set_monitor_status("error", str(exc))
+
+                if args.once:
+                    break
+
+                time.sleep(config.interval_seconds)
+                continue
             except Exception:
                 logger.exception("No fue posible inicializar la sesion CFE.")
+                repository.set_monitor_status(
+                    "error",
+                    "No fue posible inicializar la sesion CFE.",
+                )
 
                 if args.once:
                     break
@@ -92,8 +125,27 @@ def main() -> None:
         try:
             eventos = monitor.poll(fecha_publicacion=args.fecha_publicacion)
             logger.info("Ciclo completado. Eventos emitidos: %s", len(eventos))
+            repository.set_monitor_status(
+                "ok",
+                f"Ciclo completado. Eventos emitidos: {len(eventos)}.",
+            )
+        except CFEBlockedError as exc:
+            logger.warning("CFE bloqueo la consulta HTTP: %s", exc)
+            repository.set_monitor_status(
+                "blocked",
+                "CFE bloqueo la consulta HTTP. Se reintentara despues.",
+            )
+            monitor = None
+        except CFEAPIError as exc:
+            logger.warning("Error esperado durante consulta CFE: %s", exc)
+            repository.set_monitor_status("error", str(exc))
+            monitor = None
         except Exception:
             logger.exception("Error durante el ciclo de monitoreo.")
+            repository.set_monitor_status(
+                "error",
+                "Error durante el ciclo de monitoreo.",
+            )
             monitor = None
 
         if args.once:

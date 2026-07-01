@@ -17,6 +17,7 @@ cfe_api/
   main.py          demo manual de la SDK
 
 monitor/
+  dashboard/       dashboard web local para HDMI/kiosk
   database/        persistencia SQLite
   notifications/   notificadores externos
   config.py        configuracion desde entorno/.env
@@ -39,6 +40,9 @@ TELEGRAM_CHAT_ID=
 MONITOR_DB_PATH=data/monitor.sqlite3
 MONITOR_INTERVAL_SECONDS=300
 MONITOR_LOG_LEVEL=INFO
+DASHBOARD_HOST=127.0.0.1
+DASHBOARD_PORT=8000
+DASHBOARD_REFRESH_SECONDS=30
 ```
 
 Telegram es opcional. Si no hay credenciales, el monitor sigue funcionando sin notificaciones.
@@ -78,6 +82,29 @@ python -m monitor.main
 ```
 
 El monitor consulta CFE, guarda concursos en SQLite y solo emite eventos para concursos nuevos.
+
+Si CFE bloquea temporalmente la sesion HTTP con `403`, el monitor registra el estado como
+`blocked`, conserva los datos historicos y reintenta en el siguiente ciclo.
+
+## Ejecutar el dashboard
+
+El dashboard lee SQLite y no consulta CFE directamente.
+Por defecto muestra solo concursos publicados hoy.
+Tambien muestra el estado de conexion del monitor contra CFE.
+
+```powershell
+python -m monitor.dashboard.app
+```
+
+Luego abre:
+
+```text
+http://127.0.0.1:8000
+```
+
+En Raspberry Pi se puede abrir esa URL con Chromium en modo kiosk para mostrarla por HDMI.
+
+El dashboard incluye un placeholder de clima. Todavia no consulta ninguna API externa.
 
 ## Inspeccionar SQLite
 
