@@ -22,6 +22,53 @@ const placeholderWeather = {
 let refreshSeconds = 30;
 let weatherRefreshSeconds = 900;
 
+const ENTITY_ALIASES = {
+  aguascalientes: "aguascalientes",
+  "baja california": "baja-california",
+  "baja california sur": "baja-california-sur",
+  campeche: "campeche",
+  chiapas: "chiapas",
+  chihuahua: "chihuahua",
+  "ciudad de mexico": "ciudad-de-mexico",
+  cdmx: "ciudad-de-mexico",
+  coahuila: "coahuila",
+  "coahuila de zaragoza": "coahuila",
+  colima: "colima",
+  durango: "durango",
+  guanajuato: "guanajuato",
+  guerrero: "guerrero",
+  hidalgo: "hidalgo",
+  jalisco: "jalisco",
+  mexico: "estado-de-mexico",
+  "estado de mexico": "estado-de-mexico",
+  edomex: "estado-de-mexico",
+  michoacan: "michoacan",
+  "michoacan de ocampo": "michoacan",
+  morelos: "morelos",
+  nayarit: "nayarit",
+  "nuevo leon": "nuevo-leon",
+  oaxaca: "oaxaca",
+  puebla: "puebla",
+  queretaro: "queretaro",
+  "quintana roo": "quintana-roo",
+  "san luis potosi": "san-luis-potosi",
+  sinaloa: "sinaloa",
+  sonora: "sonora",
+  tabasco: "tabasco",
+  tamaulipas: "tamaulipas",
+  tlaxcala: "tlaxcala",
+  veracruz: "veracruz",
+  "veracruz de ignacio de la llave": "veracruz",
+  yucatan: "yucatan",
+  zacatecas: "zacatecas",
+};
+
+const ENTITY_DISPLAY_NAMES = {
+  "coahuila de zaragoza": "Coahuila",
+  "michoacan de ocampo": "Michoac\u00e1n",
+  "veracruz de ignacio de la llave": "Veracruz",
+};
+
 async function loadConcursos() {
   try {
     const response = await fetch("/api/concursos?limit=30", { cache: "no-store" });
@@ -105,12 +152,30 @@ function renderRow(item) {
   return `
     <tr>
       <td><strong>${escapeHtml(item.numero)}</strong></td>
-      <td>${escapeHtml(item.entidad_federativa)}</td>
+      <td>${renderEntityBadge(item.entidad_federativa)}</td>
       <td>${escapeHtml(item.tipo_procedimiento)}</td>
-      <td>${escapeHtml(formatDateTime(item.fecha_publicacion))}</td>
+      <td>${formatPublicationDateTime(item.fecha_publicacion)}</td>
       <td>${escapeHtml(item.descripcion)}</td>
     </tr>
   `;
+}
+
+function renderEntityBadge(value) {
+  const normalized = normalizeEntity(value);
+  const label = escapeHtml(ENTITY_DISPLAY_NAMES[normalized] || value || "Sin entidad");
+  const entityKey = ENTITY_ALIASES[normalized] || "unknown";
+
+  return `<span class="entity-badge entity-${entityKey}">${label}</span>`;
+}
+
+function normalizeEntity(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function renderSourceStatus(sourceStatus) {
@@ -197,6 +262,30 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatPublicationDateTime(value) {
+  const date = parseDate(value);
+
+  if (!date) {
+    return "--";
+  }
+
+  const datePart = new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+  const timePart = new Intl.DateTimeFormat("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  })
+    .format(date)
+    .replace(/\s*a\.\s*m\./i, " a.m.")
+    .replace(/\s*p\.\s*m\./i, " p.m.");
+
+  return `${escapeHtml(datePart)}<br>${escapeHtml(timePart)}`;
 }
 
 function parseDate(value) {

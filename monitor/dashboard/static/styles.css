@@ -198,12 +198,12 @@ td {
   padding: 14px 12px;
   border-bottom: 1px solid var(--line);
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 th {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 td {
@@ -229,12 +229,12 @@ td:nth-child(3) {
 
 th:nth-child(4),
 td:nth-child(4) {
-  width: 14%;
+  width: 10%;
 }
 
 th:nth-child(5),
 td:nth-child(5) {
-  width: 42%;
+  width: 46%;
 }
 
 td:nth-child(5) {
@@ -255,6 +255,151 @@ td:nth-child(5) {
   background: #1f3540;
   color: var(--text);
   font-weight: 700;
+}
+
+.entity-badge {
+  --entity-fill: #263840;
+  --entity-text: #f7fbfc;
+
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 26px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--entity-fill);
+  color: var(--entity-text);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.entity-aguascalientes {
+  --entity-fill: #2b638d;
+}
+
+.entity-baja-california {
+  --entity-fill: #2f8052;
+}
+
+.entity-baja-california-sur {
+  --entity-fill: #9a6530;
+}
+
+.entity-campeche {
+  --entity-fill: #7251a0;
+}
+
+.entity-chiapas {
+  --entity-fill: #3f875d;
+}
+
+.entity-chihuahua {
+  --entity-fill: #9d4747;
+}
+
+.entity-ciudad-de-mexico {
+  --entity-fill: #438b83;
+}
+
+.entity-coahuila {
+  --entity-fill: #856124;
+}
+
+.entity-colima {
+  --entity-fill: #327b82;
+}
+
+.entity-durango {
+  --entity-fill: #994343;
+}
+
+.entity-estado-de-mexico {
+  --entity-fill: #327e85;
+}
+
+.entity-guanajuato {
+  --entity-fill: #96582c;
+}
+
+.entity-guerrero {
+  --entity-fill: #2b756f;
+}
+
+.entity-hidalgo {
+  --entity-fill: #5b8b65;
+}
+
+.entity-jalisco {
+  --entity-fill: #4b7899;
+}
+
+.entity-michoacan {
+  --entity-fill: #407d59;
+}
+
+.entity-morelos {
+  --entity-fill: #92733f;
+}
+
+.entity-nayarit {
+  --entity-fill: #327e78;
+}
+
+.entity-nuevo-leon {
+  --entity-fill: #2e6897;
+}
+
+.entity-oaxaca {
+  --entity-fill: #65469c;
+}
+
+.entity-puebla {
+  --entity-fill: #8e3030;
+}
+
+.entity-queretaro {
+  --entity-fill: #2b6b69;
+}
+
+.entity-quintana-roo {
+  --entity-fill: #2b789f;
+}
+
+.entity-san-luis-potosi {
+  --entity-fill: #8d7a2e;
+}
+
+.entity-sinaloa {
+  --entity-fill: #277a43;
+}
+
+.entity-sonora {
+  --entity-fill: #9d5c2c;
+}
+
+.entity-tabasco {
+  --entity-fill: #2d7f76;
+}
+
+.entity-tamaulipas {
+  --entity-fill: #247a70;
+}
+
+.entity-tlaxcala {
+  --entity-fill: #774fa0;
+}
+
+.entity-veracruz {
+  --entity-fill: #2b7198;
+}
+
+.entity-yucatan {
+  --entity-fill: #68852b;
+}
+
+.entity-zacatecas {
+  --entity-fill: #994c73;
 }
 
 @media (max-width: 900px) {
