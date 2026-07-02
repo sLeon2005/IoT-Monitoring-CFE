@@ -65,13 +65,13 @@ def format_new_concurso_message(concurso: Concurso) -> str:
     return "\n".join(
         [
             "<b>Nuevo concurso CFE detectado</b>",
-            f"<b>Numero:</b> {html.escape(concurso.numero)}",
+            f"<b>Número:</b> {html.escape(concurso.numero)}",
             f"<b>Entidad:</b> {html.escape(concurso.entidad_federativa)}",
             f"<b>Estado:</b> {html.escape(concurso.estado)}",
             f"<b>Tipo:</b> {html.escape(concurso.tipo_procedimiento)}",
-            f"<b>Publicacion:</b> {html.escape(fecha_publicacion)}",
+            f"<b>Publicación:</b> {html.escape(fecha_publicacion)}",
             "",
-            "<b>Descripcion:</b>",
+            "<b>Descripción:</b>",
             html.escape(concurso.descripcion),
         ]
     )
