@@ -13,6 +13,7 @@ El sistema esta pensado para ejecutarse en una Raspberry Pi y alimentar:
 - SQLite historico.
 - Dashboard web local para pantalla HDMI.
 - Notificaciones por Telegram.
+- Clima actual via API externa sencilla.
 - Indicadores de estado y, en el futuro, GPIO para torreta luminosa.
 
 ## Arquitectura
@@ -61,6 +62,8 @@ monitor/
     static/              HTML/CSS/JS e iconos
   notifications/
     telegram.py          notificador Telegram y CLI de prueba
+  weather/
+    open_meteo.py        cliente de clima actual Open-Meteo
   system/
     network.py           estado WiFi Windows/Linux
 
@@ -90,6 +93,12 @@ CFE_BROWSER_TIMEOUT_MS=60000
 DASHBOARD_HOST=127.0.0.1
 DASHBOARD_PORT=8000
 DASHBOARD_REFRESH_SECONDS=120
+WEATHER_ENABLED=true
+WEATHER_LOCATION_NAME=Tampico
+WEATHER_LATITUDE=22.2372
+WEATHER_LONGITUDE=-97.8700
+WEATHER_REFRESH_SECONDS=900
+WEATHER_TIMEOUT_SECONDS=10
 ```
 
 Notas:
@@ -98,6 +107,7 @@ Notas:
 - `data/cfe_session.json` es cache local de cookies/token y no debe versionarse.
 - `data/monitor.sqlite3` es la base local SQLite y no debe versionarse.
 - Playwright/Chromium se usa para obtener sesion CFE cuando el acceso directo con `requests` es bloqueado.
+- Open-Meteo se usa para clima actual; no requiere API key.
 
 ## Comandos Utiles
 
@@ -155,6 +165,12 @@ Abrir:
 http://127.0.0.1:8000
 ```
 
+Probar clima actual:
+
+```powershell
+python -m monitor.weather.open_meteo --test
+```
+
 ## Sesion CFE
 
 Flujo actual:
@@ -174,7 +190,7 @@ El dashboard:
 - Lee datos desde SQLite.
 - Muestra concursos publicados hoy.
 - Muestra estado del monitor.
-- Muestra reloj, placeholder de clima y estado WiFi.
+- Muestra reloj, clima actual via `/api/weather` y estado WiFi.
 - No debe consultar el portal CFE.
 
 Columnas actuales:
@@ -198,6 +214,19 @@ Reglas:
 - `send_new_concurso(concurso)` debe recibir un objeto `Concurso`, no diccionarios crudos.
 - `python -m monitor.notifications.telegram --test` debe seguir funcionando como prueba rapida.
 - `python -m monitor.main --notify-existing-latest` debe servir para probar formato con datos reales ya guardados.
+
+## Clima
+
+El clima vive en `monitor/weather/open_meteo.py`.
+
+Reglas:
+
+- Consultar solo clima actual de una ubicacion fija.
+- No guardar clima en SQLite.
+- No consultar clima desde `cfe_api`.
+- No requerir API key.
+- Si la API falla, el dashboard debe poder quedarse con placeholder.
+- El dashboard debe consumir clima por `/api/weather`, no llamar Open-Meteo desde JS.
 
 ## SQLite
 

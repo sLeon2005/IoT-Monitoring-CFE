@@ -22,6 +22,12 @@ class MonitorConfig:
     dashboard_host: str
     dashboard_port: int
     dashboard_refresh_seconds: int
+    weather_enabled: bool
+    weather_location_name: str
+    weather_latitude: float
+    weather_longitude: float
+    weather_refresh_seconds: int
+    weather_timeout_seconds: int
 
     @classmethod
     def from_env(cls) -> "MonitorConfig":
@@ -50,6 +56,12 @@ class MonitorConfig:
             dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
             dashboard_port=_get_int("DASHBOARD_PORT", 8000),
             dashboard_refresh_seconds=_get_int("DASHBOARD_REFRESH_SECONDS", 30),
+            weather_enabled=_get_bool("WEATHER_ENABLED", True),
+            weather_location_name=os.getenv("WEATHER_LOCATION_NAME", "Tampico"),
+            weather_latitude=_get_float("WEATHER_LATITUDE", 22.2372),
+            weather_longitude=_get_float("WEATHER_LONGITUDE", -97.87),
+            weather_refresh_seconds=_get_int("WEATHER_REFRESH_SECONDS", 900),
+            weather_timeout_seconds=_get_int("WEATHER_TIMEOUT_SECONDS", 10),
         )
 
     @property
@@ -100,3 +112,15 @@ def _get_bool(name: str, default: bool) -> bool:
         return False
 
     raise ValueError(f"{name} debe ser booleano: true/false.")
+
+
+def _get_float(name: str, default: float) -> float:
+    raw_value = os.getenv(name)
+
+    if raw_value is None:
+        return default
+
+    try:
+        return float(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"{name} debe ser numerico.") from exc

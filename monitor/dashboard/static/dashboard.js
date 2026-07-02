@@ -16,11 +16,12 @@ const wifiLabel = document.querySelector("#wifi-label");
 
 const placeholderWeather = {
   icon: "unknown",
-  temperature: null,
+  temperature_c: null,
   condition: "Clima pendiente",
 };
 
 let refreshSeconds = 30;
+let weatherRefreshSeconds = 900;
 
 async function loadConcursos() {
   try {
@@ -56,6 +57,25 @@ async function loadWifiStatus() {
       signal_percent: null,
       label: "WiFi no disponible",
       level: "none",
+    });
+  }
+}
+
+async function loadWeather() {
+  try {
+    const response = await fetch("/api/weather", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    weatherRefreshSeconds = payload.refresh_seconds || weatherRefreshSeconds;
+    renderWeather(payload);
+  } catch (error) {
+    renderWeather({
+      ...placeholderWeather,
+      condition: "Clima no disponible",
     });
   }
 }
@@ -219,11 +239,12 @@ function updateClock() {
 function renderWeather(weather) {
   const current = weather || placeholderWeather;
   const icon = current.icon || "unknown";
+  const temperature = current.temperature_c ?? current.temperature;
 
   weatherIcon.src = `/static/weather-icons/${icon}.svg`;
   weatherIcon.alt = current.condition || "Clima no disponible";
-  weatherTemp.textContent = Number.isFinite(current.temperature)
-    ? `${Math.round(current.temperature)}\u00b0C`
+  weatherTemp.textContent = Number.isFinite(temperature)
+    ? `${Math.round(temperature)}\u00b0C`
     : "--\u00b0C";
   weatherCondition.textContent = current.condition || "Clima pendiente";
 }
@@ -246,9 +267,11 @@ function emojiForWifiLevel(level) {
 
 loadConcursos();
 loadWifiStatus();
+loadWeather();
 updateClock();
 renderWeather(placeholderWeather);
 
 setInterval(loadConcursos, refreshSeconds * 1000);
 setInterval(loadWifiStatus, 30000);
+setInterval(() => loadWeather(), weatherRefreshSeconds * 1000);
 setInterval(updateClock, 1000);

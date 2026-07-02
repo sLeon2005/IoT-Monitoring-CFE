@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
 from monitor.system.network import get_wifi_status
+from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
 
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -47,6 +48,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_url.path == "/api/system/wifi":
             self._send_json(get_wifi_status())
+            return
+
+        if parsed_url.path == "/api/weather":
+            self._send_weather()
             return
 
         self.send_error(HTTPStatus.NOT_FOUND)
@@ -101,6 +106,19 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             "count": len(rows),
             "items": [_row_to_dict(row) for row in rows],
         }
+        self._send_json(payload)
+
+    def _send_weather(self) -> None:
+        try:
+            snapshot = get_configured_weather(self.server.config)
+            payload = snapshot.to_dict()
+        except Exception:
+            payload = weather_disabled_snapshot(
+                self.server.config.weather_location_name
+            ).to_dict()
+            payload["condition"] = "Clima no disponible"
+
+        payload["refresh_seconds"] = self.server.config.weather_refresh_seconds
         self._send_json(payload)
 
 

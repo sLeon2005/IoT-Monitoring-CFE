@@ -50,6 +50,12 @@ CFE_BROWSER_TIMEOUT_MS=60000
 DASHBOARD_HOST=127.0.0.1
 DASHBOARD_PORT=8000
 DASHBOARD_REFRESH_SECONDS=120
+WEATHER_ENABLED=true
+WEATHER_LOCATION_NAME=Tampico
+WEATHER_LATITUDE=22.2372
+WEATHER_LONGITUDE=-97.8700
+WEATHER_REFRESH_SECONDS=900
+WEATHER_TIMEOUT_SECONDS=10
 ```
 
 Telegram es opcional. Si no hay credenciales, el monitor sigue funcionando sin notificaciones.
@@ -174,10 +180,28 @@ http://127.0.0.1:8000
 
 En Raspberry Pi se puede abrir esa URL con Chromium en modo kiosk para mostrarla por HDMI.
 
-El dashboard incluye un placeholder de clima. Todavia no consulta ninguna API externa.
+El dashboard consulta clima actual mediante Open-Meteo y usa placeholder si la API falla.
 La tabla de pantalla muestra solo datos operativos: numero, entidad, estado, tipo,
 fecha de publicacion y descripcion.
 El indicador WiFi usa `netsh` en Windows y `/proc/net/wireless` en Raspberry/Linux.
+
+## Clima
+
+El clima usa Open-Meteo para consultar condiciones actuales de una sola ubicacion.
+No requiere API key y no guarda historico.
+
+Probar comunicacion con la API:
+
+```powershell
+python -m monitor.weather.open_meteo --test
+```
+
+La respuesta se normaliza a un formato interno con ubicacion, temperatura, condicion e icono.
+El dashboard consume esa informacion desde:
+
+```text
+/api/weather
+```
 
 ## Inspeccionar SQLite
 
