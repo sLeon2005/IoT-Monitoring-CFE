@@ -67,8 +67,6 @@ monitor/
   system/
     network.py           estado WiFi Windows/Linux
 
-legacy/
-  api_scan.py            referencia historica de ingenieria inversa
 ```
 
 ## Configuracion
@@ -114,7 +112,7 @@ Notas:
 Compilar/verificar imports:
 
 ```powershell
-python -m compileall cfe_api monitor legacy
+python -m compileall cfe_api monitor
 ```
 
 Ejecutar monitor una vez:
@@ -252,7 +250,7 @@ Reglas:
 - Usar `apply_patch` para ediciones manuales.
 - No borrar ni revertir cambios del usuario.
 - No hacer commits salvo que el usuario lo pida explicitamente.
-- Antes de cerrar cambios de codigo, correr `python -m compileall cfe_api monitor legacy`.
+- Antes de cerrar cambios de codigo, correr `python -m compileall cfe_api monitor`.
 
 ## Futuro Cercano
 

@@ -25,9 +25,6 @@ monitor/
   main.py          proceso principal
   monitor.py       orquestador del monitoreo
 
-legacy/
-  api_scan.py      script historico de ingenieria inversa
-
 ```
 
 ## Configuracion
@@ -229,4 +226,3 @@ python -m monitor.database.inspect --db data/monitor.sqlite3
 - `monitor` no conoce el protocolo HTTP interno de CFE.
 - El formato JSON de CFE se encapsula en `Concurso.from_dict()`.
 - El codigo de aplicacion no debe leer campos como `item["Numero"]` directamente.
-- `legacy/` solo contiene material de referencia historica.
