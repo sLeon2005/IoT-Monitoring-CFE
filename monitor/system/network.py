@@ -41,12 +41,12 @@ def _get_windows_wifi_status() -> dict:
     )
 
     if signal_text is None:
-        return _disconnected_status("Sin señal")
+        return _disconnected_status("Sin senal")
 
     signal_match = re.search(r"(\d+)", signal_text)
 
     if signal_match is None:
-        return _disconnected_status("Sin señal")
+        return _disconnected_status("Sin senal")
 
     signal_percent = int(signal_match.group(1))
     ssid = values.get("ssid")
@@ -107,18 +107,17 @@ def _get_linux_wifi_status() -> dict:
         signal_percent = round(max(0, min(100, quality / 70 * 100)))
         return _connected_status(signal_percent, interface.strip())
 
-    return _disconnected_status("Sin señal")
+    return _disconnected_status("Sin senal")
 
 
 def _connected_status(signal_percent: int, ssid: str | None) -> dict:
-    bars = _bars_for_signal(signal_percent)
     level = _level_for_signal(signal_percent)
 
     return {
         "connected": signal_percent > 0,
         "ssid": ssid,
         "signal_percent": signal_percent,
-        "bars": bars,
+        "bars": _bars_for_signal(signal_percent),
         "level": level,
         "label": _label_for_level(level),
     }
@@ -136,13 +135,10 @@ def _disconnected_status(label: str) -> dict:
 
 
 def _bars_for_signal(signal_percent: int) -> int:
-    if signal_percent >= 75:
-        return 4
-
-    if signal_percent >= 50:
+    if signal_percent >= 70:
         return 3
 
-    if signal_percent >= 25:
+    if signal_percent >= 35:
         return 2
 
     if signal_percent > 0:
@@ -168,8 +164,8 @@ def _label_for_level(level: str) -> str:
     labels = {
         "good": "WiFi estable",
         "warning": "WiFi medio",
-        "poor": "WiFi débil",
-        "none": "Sin señal",
+        "poor": "WiFi debil",
+        "none": "Sin senal",
     }
 
     return labels[level]

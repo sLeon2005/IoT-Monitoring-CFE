@@ -13,52 +13,56 @@
           <p class="eyebrow">Monitoreo CFE</p>
           <h1>Concursos Publicados</h1>
         </section>
-        <section class="clock" aria-label="Fecha y hora actual">
-          <strong id="clock-time">--:--:--</strong>
-          <span id="clock-date">--/--/----</span>
-        </section>
-        <section class="weather" aria-label="Clima">
-          <img
-            class="weather-icon"
-            id="weather-icon"
-            src="/static/weather-icons/unknown.svg"
-            alt="Clima no disponible"
-          >
-          <div>
-            <strong id="weather-temp">--&deg;C</strong>
-            <span id="weather-condition">Clima pendiente</span>
-          </div>
-        </section>
-        <section class="wifi" aria-label="Senal WiFi">
-          <span class="wifi-emoji" id="wifi-emoji">--</span>
-          <div>
-            <span id="wifi-label">...</span>
-          </div>
-        </section>
         <section class="status" id="status-panel">
           <span class="status-dot" id="status-dot"></span>
           <div>
             <p class="status-label" id="status-label">Cargando</p>
-            <p class="status-detail" id="status-detail">Sin datos todavia</p>
+            <p class="status-detail" id="status-detail">SIN DATOS</p>
+          </div>
+        </section>
+        <section class="environment-panel" aria-label="Fecha, hora y clima">
+          <div class="clock" aria-label="Fecha y hora actual">
+            <strong id="clock-time">--:--:--</strong>
+            <span id="clock-date">--/--/----</span>
+          </div>
+          <div class="weather" aria-label="Clima">
+            <img
+              class="weather-icon"
+              id="weather-icon"
+              src="/static/weather-icons/unknown.svg"
+              alt="Clima no disponible"
+            >
+            <div>
+              <strong id="weather-temp">--&deg;C</strong>
+              <span id="weather-condition">Clima pendiente</span>
+            </div>
+          </div>
+          <div class="wifi" aria-label="Senal WiFi">
+            <img
+              class="wifi-icon"
+              id="wifi-icon"
+              src="/static/wifi-icons/wifi_0.svg"
+              alt="Sin senal WiFi"
+            >
           </div>
         </section>
       </header>
 
       <section class="metrics">
         <div>
-          <span class="metric-label">Concursos en pantalla</span>
+          <span class="metric-label">CONCURSOS PUBLICADOS HOY</span>
           <strong id="metric-count">0</strong>
         </div>
         <div>
-          <span class="metric-label">Ultima publicacion</span>
+          <span class="metric-label">ULTIMA PUBLICACIÓN</span>
           <strong id="metric-last">--</strong>
         </div>
         <div>
-          <span class="metric-label">Actualizacion</span>
+          <span class="metric-label">ACTUALIZACIÓN</span>
           <strong id="metric-updated">--</strong>
         </div>
         <div>
-          <span class="metric-label">Conexion CFE</span>
+          <span class="metric-label">CONEXIÓN CFE</span>
           <strong id="metric-source">--</strong>
         </div>
       </section>
@@ -67,17 +71,16 @@
         <table>
           <thead>
             <tr>
-              <th>Numero</th>
-              <th>Entidad</th>
-              <th>Estado</th>
-              <th>Tipo</th>
-              <th>Publicacion</th>
-              <th>Descripcion</th>
+              <th>NÚMERO</th>
+              <th>ENTIDAD</th>
+              <th>TIPO</th>
+              <th>PUBLICACIÓN</th>
+              <th>DESCRIPCIÓN</th>
             </tr>
           </thead>
           <tbody id="concursos-body">
             <tr>
-              <td colspan="6" class="empty">Cargando concursos...</td>
+              <td colspan="5" class="empty">Cargando concursos...</td>
             </tr>
           </tbody>
         </table>

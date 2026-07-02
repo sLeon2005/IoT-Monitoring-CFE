@@ -11,8 +11,7 @@ const clockDate = document.querySelector("#clock-date");
 const weatherIcon = document.querySelector("#weather-icon");
 const weatherTemp = document.querySelector("#weather-temp");
 const weatherCondition = document.querySelector("#weather-condition");
-const wifiEmoji = document.querySelector("#wifi-emoji");
-const wifiLabel = document.querySelector("#wifi-label");
+const wifiIcon = document.querySelector("#wifi-icon");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -90,7 +89,7 @@ function render(payload) {
     statusLabel.textContent = "Sin concursos";
     statusDetail.textContent = `Sin publicaciones para ${payload.fecha_publicacion || "hoy"}`;
     statusDot.style.background = "var(--yellow)";
-    body.innerHTML = '<tr><td colspan="6" class="empty">No hay concursos guardados.</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" class="empty">No hay concursos guardados.</td></tr>';
   } else {
     const latest = items[0];
     const latestDate = parseDate(latest.fecha_publicacion || latest.detectado_en);
@@ -107,7 +106,6 @@ function renderRow(item) {
     <tr>
       <td><strong>${escapeHtml(item.numero)}</strong></td>
       <td>${escapeHtml(item.entidad_federativa)}</td>
-      <td><span class="badge">${escapeHtml(item.estado)}</span></td>
       <td>${escapeHtml(item.tipo_procedimiento)}</td>
       <td>${escapeHtml(formatDateTime(item.fecha_publicacion))}</td>
       <td>${escapeHtml(item.descripcion)}</td>
@@ -152,7 +150,7 @@ function updateActivityStatus(latestDate) {
   }
 
   const minutes = Math.floor((Date.now() - latestDate.getTime()) / 60000);
-  statusDetail.textContent = `Ultimo concurso hace ${formatAge(minutes)}`;
+  statusDetail.textContent = `ÚLTIMO CONCURSO HACE ${formatAge(minutes)}`;
 
   if (minutes < 15) {
     statusLabel.textContent = "Actividad reciente";
@@ -250,19 +248,20 @@ function renderWeather(weather) {
 }
 
 function renderWifi(wifi) {
-  wifiEmoji.textContent = emojiForWifiLevel(wifi.level);
-  wifiLabel.textContent = wifi.label || "WiFi pendiente";
+  const bars = normalizeWifiBars(wifi.bars);
+
+  wifiIcon.src = `/static/wifi-icons/wifi_${bars}.svg`;
+  wifiIcon.alt = wifi.label || "Estado WiFi";
 }
 
-function emojiForWifiLevel(level) {
-  const emojis = {
-    good: "\u{1F7E2}",
-    warning: "\u{1F7E1}",
-    poor: "\u{1F534}",
-    none: "\u274C",
-  };
+function normalizeWifiBars(value) {
+  const bars = Number(value);
 
-  return emojis[level] || emojis.none;
+  if (!Number.isFinite(bars)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(3, Math.round(bars)));
 }
 
 loadConcursos();
