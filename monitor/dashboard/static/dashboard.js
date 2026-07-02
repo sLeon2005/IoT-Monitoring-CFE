@@ -11,6 +11,8 @@ const clockDate = document.querySelector("#clock-date");
 const weatherIcon = document.querySelector("#weather-icon");
 const weatherTemp = document.querySelector("#weather-temp");
 const weatherCondition = document.querySelector("#weather-condition");
+const wifiEmoji = document.querySelector("#wifi-emoji");
+const wifiLabel = document.querySelector("#wifi-label");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -39,6 +41,25 @@ async function loadConcursos() {
   }
 }
 
+async function loadWifiStatus() {
+  try {
+    const response = await fetch("/api/system/wifi", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    renderWifi(await response.json());
+  } catch (error) {
+    renderWifi({
+      connected: false,
+      signal_percent: null,
+      label: "WiFi no disponible",
+      level: "none",
+    });
+  }
+}
+
 function render(payload) {
   const items = payload.items || [];
   metricCount.textContent = String(items.length);
@@ -49,7 +70,7 @@ function render(payload) {
     statusLabel.textContent = "Sin concursos";
     statusDetail.textContent = `Sin publicaciones para ${payload.fecha_publicacion || "hoy"}`;
     statusDot.style.background = "var(--yellow)";
-    body.innerHTML = '<tr><td colspan="8" class="empty">No hay concursos guardados.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="empty">No hay concursos guardados.</td></tr>';
   } else {
     const latest = items[0];
     const latestDate = parseDate(latest.fecha_publicacion || latest.detectado_en);
@@ -69,8 +90,6 @@ function renderRow(item) {
       <td><span class="badge">${escapeHtml(item.estado)}</span></td>
       <td>${escapeHtml(item.tipo_procedimiento)}</td>
       <td>${escapeHtml(formatDateTime(item.fecha_publicacion))}</td>
-      <td>${escapeHtml(formatMoney(item.monto))}</td>
-      <td>${escapeHtml(item.proveedor_adjudicado || "-")}</td>
       <td>${escapeHtml(item.descripcion)}</td>
     </tr>
   `;
@@ -171,16 +190,6 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatMoney(value) {
-  const amount = Number(value || 0);
-
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -219,9 +228,27 @@ function renderWeather(weather) {
   weatherCondition.textContent = current.condition || "Clima pendiente";
 }
 
+function renderWifi(wifi) {
+  wifiEmoji.textContent = emojiForWifiLevel(wifi.level);
+  wifiLabel.textContent = wifi.label || "WiFi pendiente";
+}
+
+function emojiForWifiLevel(level) {
+  const emojis = {
+    good: "\u{1F7E2}",
+    warning: "\u{1F7E1}",
+    poor: "\u{1F534}",
+    none: "\u274C",
+  };
+
+  return emojis[level] || emojis.none;
+}
+
 loadConcursos();
+loadWifiStatus();
 updateClock();
 renderWeather(placeholderWeather);
 
 setInterval(loadConcursos, refreshSeconds * 1000);
+setInterval(loadWifiStatus, 30000);
 setInterval(updateClock, 1000);

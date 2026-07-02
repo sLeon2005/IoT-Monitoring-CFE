@@ -37,8 +37,6 @@ class ConcursosService:
         }
 
         headers = {
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Origin": self.session.BASE_URL,
             "X-Requested-With": "XMLHttpRequest",
             "Referer": self.session.HOME_URL,
         }

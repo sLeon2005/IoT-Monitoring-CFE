@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
+from monitor.system.network import get_wifi_status
 
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -44,6 +45,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             self._send_concursos(parsed_url.query)
             return
 
+        if parsed_url.path == "/api/system/wifi":
+            self._send_json(get_wifi_status())
+            return
+
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def log_message(self, format: str, *args) -> None:
@@ -67,6 +72,16 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def _send_json(self, payload: dict) -> None:
+        content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
     def _send_concursos(self, query: str) -> None:
         params = parse_qs(query)
         limit = _parse_limit(params.get("limit", ["50"])[0])
@@ -86,14 +101,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             "count": len(rows),
             "items": [_row_to_dict(row) for row in rows],
         }
-        content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(content)))
-        self.end_headers()
-        self.wfile.write(content)
+        self._send_json(payload)
 
 
 def _parse_limit(value: str) -> int:

@@ -1,0 +1,237 @@
+# AGENTS.md
+
+Guia para agentes de IA trabajando en este repositorio.
+
+## Proyecto
+
+IoT Monitoring CFE es un sistema de monitoreo autonomo para concursos publicos de CFE.
+
+El sistema esta pensado para ejecutarse en una Raspberry Pi y alimentar:
+
+- SDK interna para consumir el portal de CFE.
+- Monitor periodico.
+- SQLite historico.
+- Dashboard web local para pantalla HDMI.
+- Notificaciones por Telegram.
+- Indicadores de estado y, en el futuro, GPIO para torreta luminosa.
+
+## Arquitectura
+
+El proyecto se divide en dos capas principales:
+
+- `cfe_api/`: SDK interna. Su unica responsabilidad es hablar con el portal de CFE.
+- `monitor/`: aplicacion operativa. Consume la SDK, guarda historico, emite eventos, actualiza dashboard y notifica.
+
+Reglas estrictas:
+
+- `cfe_api` no debe conocer Telegram, SQLite, dashboard, GPIO, Raspberry Pi ni systemd.
+- `monitor` no debe conocer detalles internos del protocolo HTTP de CFE.
+- El dashboard nunca consulta CFE directamente; siempre lee SQLite.
+- El codigo de aplicacion no debe acceder directamente a campos crudos del JSON de CFE, como `item["Numero"]`.
+- Toda conversion del JSON de CFE debe vivir en `Concurso.from_dict()`.
+- Toda conversion auxiliar de fechas debe vivir en `cfe_api/core/utils.py`.
+- No guardar tokens, cookies, chat IDs ni secretos en codigo versionado.
+
+## Estructura Relevante
+
+```text
+cfe_api/
+  core/
+    session.py           sesion HTTP requests, cookies, CSRF
+    browser_session.py   bootstrap opcional con Chromium/Playwright
+    errors.py            errores esperados del SDK
+    utils.py             utilidades compartidas de la SDK
+  models/
+    concurso.py          dataclass Concurso y conversion desde JSON CFE
+  services/
+    concursos.py         endpoint getProcBusqueda
+  main.py                demo manual de la SDK
+
+monitor/
+  config.py              configuracion desde .env
+  cfe_session.py         resolucion de sesion CFE para monitor
+  monitor.py             orquestador de polling y eventos
+  main.py                CLI principal del monitor
+  events.py              eventos del dominio del monitor
+  database/
+    repository.py        persistencia SQLite
+    inspect.py           inspeccion manual de SQLite
+  dashboard/
+    app.py               servidor web local
+    static/              HTML/CSS/JS e iconos
+  notifications/
+    telegram.py          notificador Telegram y CLI de prueba
+  system/
+    network.py           estado WiFi Windows/Linux
+
+legacy/
+  api_scan.py            referencia historica de ingenieria inversa
+```
+
+## Configuracion
+
+La configuracion local vive en `.env`. Este archivo no debe versionarse.
+
+Variables principales:
+
+```env
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+MONITOR_DB_PATH=data/monitor.sqlite3
+MONITOR_INTERVAL_SECONDS=300
+MONITOR_LOG_LEVEL=INFO
+CFE_COOKIE_HEADER=
+CFE_REQUEST_VERIFICATION_TOKEN=
+CFE_SESSION_CACHE_PATH=data/cfe_session.json
+CFE_BROWSER_PROFILE_DIR=data/browser-profile
+CFE_BROWSER_BOOTSTRAP_ENABLED=true
+CFE_BROWSER_HEADLESS=false
+CFE_BROWSER_TIMEOUT_MS=60000
+DASHBOARD_HOST=127.0.0.1
+DASHBOARD_PORT=8000
+DASHBOARD_REFRESH_SECONDS=120
+```
+
+Notas:
+
+- `CFE_COOKIE_HEADER` y `CFE_REQUEST_VERIFICATION_TOKEN` pueden dejarse vacios si se usa bootstrap por navegador.
+- `data/cfe_session.json` es cache local de cookies/token y no debe versionarse.
+- `data/monitor.sqlite3` es la base local SQLite y no debe versionarse.
+- Playwright/Chromium se usa para obtener sesion CFE cuando el acceso directo con `requests` es bloqueado.
+
+## Comandos Utiles
+
+Compilar/verificar imports:
+
+```powershell
+python -m compileall cfe_api monitor legacy
+```
+
+Ejecutar monitor una vez:
+
+```powershell
+python -m monitor.main --once
+```
+
+Ejecutar monitor para fecha especifica:
+
+```powershell
+python -m monitor.main --once --date 2026-07-01
+```
+
+Ejecutar monitor continuo:
+
+```powershell
+python -m monitor.main
+```
+
+Inspeccionar SQLite:
+
+```powershell
+python -m monitor.database.inspect --limit 10
+```
+
+Probar Telegram sin consultar CFE:
+
+```powershell
+python -m monitor.notifications.telegram --test
+```
+
+Enviar por Telegram el concurso mas reciente ya guardado en SQLite:
+
+```powershell
+python -m monitor.main --notify-existing-latest
+```
+
+Ejecutar dashboard local:
+
+```powershell
+python -m monitor.dashboard.app
+```
+
+Abrir:
+
+```text
+http://127.0.0.1:8000
+```
+
+## Sesion CFE
+
+Flujo actual:
+
+1. Si `.env` trae `CFE_COOKIE_HEADER` y `CFE_REQUEST_VERIFICATION_TOKEN`, se usan esos valores.
+2. Si no hay valores manuales, se intenta usar `data/cfe_session.json`.
+3. Si no hay cache y `CFE_BROWSER_BOOTSTRAP_ENABLED=true`, se abre Chromium con Playwright.
+4. El navegador carga el portal, extrae cookies y `__RequestVerificationToken`, y guarda la cache.
+5. Si CFE responde `403`, el monitor invalida la cache para renovarla.
+
+No automatizar resolucion de captchas o validaciones visuales. Si CFE muestra una validacion interactiva, el usuario debe resolverla manualmente en la ventana del navegador.
+
+## Dashboard
+
+El dashboard:
+
+- Lee datos desde SQLite.
+- Muestra concursos publicados hoy.
+- Muestra estado del monitor.
+- Muestra reloj, placeholder de clima y estado WiFi.
+- No debe consultar el portal CFE.
+
+Columnas actuales:
+
+- Numero
+- Entidad
+- Estado
+- Tipo
+- Publicacion
+- Descripcion
+
+No agregar monto/proveedor al dashboard salvo que el usuario lo pida explicitamente.
+
+## Telegram
+
+Telegram vive en `monitor/notifications/telegram.py`.
+
+Reglas:
+
+- Token y chat ID siempre desde `.env`.
+- `send_new_concurso(concurso)` debe recibir un objeto `Concurso`, no diccionarios crudos.
+- `python -m monitor.notifications.telegram --test` debe seguir funcionando como prueba rapida.
+- `python -m monitor.main --notify-existing-latest` debe servir para probar formato con datos reales ya guardados.
+
+## SQLite
+
+SQLite vive por defecto en:
+
+```text
+data/monitor.sqlite3
+```
+
+El repositorio principal es `monitor/database/repository.py`.
+
+Reglas:
+
+- No consultar SQLite directamente desde el dashboard fuera del repositorio/API del dashboard.
+- No guardar datos historicos en archivos sueltos.
+- Mantener metodos de lectura claros para casos de uso reales, como `list_recent`, `list_by_publication_date`, `get_latest`.
+
+## Estilo de Cambios
+
+- Mantener responsabilidades separadas.
+- Preferir cambios pequenos y localizados.
+- No introducir frameworks nuevos sin necesidad.
+- Usar `apply_patch` para ediciones manuales.
+- No borrar ni revertir cambios del usuario.
+- No hacer commits salvo que el usuario lo pida explicitamente.
+- Antes de cerrar cambios de codigo, correr `python -m compileall cfe_api monitor legacy`.
+
+## Futuro Cercano
+
+Prioridades probables:
+
+1. Robustecer ejecucion en Raspberry Pi.
+2. Crear servicios `systemd` para monitor y dashboard.
+3. Configurar Chromium kiosk en HDMI.
+4. Implementar torreta GPIO.
+5. Agregar alertas operativas sin spam para errores CFE/Telegram.
+6. Agregar estadisticas historicas sobre SQLite.

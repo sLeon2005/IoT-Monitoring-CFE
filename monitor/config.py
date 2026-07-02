@@ -9,6 +9,13 @@ from pathlib import Path
 class MonitorConfig:
     db_path: str
     interval_seconds: int
+    cfe_cookie_header: str | None
+    cfe_request_verification_token: str | None
+    cfe_session_cache_path: str
+    cfe_browser_profile_dir: str
+    cfe_browser_bootstrap_enabled: bool
+    cfe_browser_headless: bool
+    cfe_browser_timeout_ms: int
     telegram_bot_token: str | None
     telegram_chat_id: str | None
     log_level: str
@@ -21,6 +28,22 @@ class MonitorConfig:
         return cls(
             db_path=os.getenv("MONITOR_DB_PATH", "data/monitor.sqlite3"),
             interval_seconds=_get_int("MONITOR_INTERVAL_SECONDS", 300),
+            cfe_cookie_header=os.getenv("CFE_COOKIE_HEADER"),
+            cfe_request_verification_token=os.getenv("CFE_REQUEST_VERIFICATION_TOKEN"),
+            cfe_session_cache_path=os.getenv(
+                "CFE_SESSION_CACHE_PATH",
+                "data/cfe_session.json",
+            ),
+            cfe_browser_profile_dir=os.getenv(
+                "CFE_BROWSER_PROFILE_DIR",
+                "data/browser-profile",
+            ),
+            cfe_browser_bootstrap_enabled=_get_bool(
+                "CFE_BROWSER_BOOTSTRAP_ENABLED",
+                False,
+            ),
+            cfe_browser_headless=_get_bool("CFE_BROWSER_HEADLESS", False),
+            cfe_browser_timeout_ms=_get_int("CFE_BROWSER_TIMEOUT_MS", 60000),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN"),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID"),
             log_level=os.getenv("MONITOR_LOG_LEVEL", "INFO"),
@@ -60,3 +83,20 @@ def _get_int(name: str, default: int) -> int:
         return int(raw_value)
     except ValueError as exc:
         raise ValueError(f"{name} debe ser un entero.") from exc
+
+
+def _get_bool(name: str, default: bool) -> bool:
+    raw_value = os.getenv(name)
+
+    if raw_value is None:
+        return default
+
+    normalized = raw_value.strip().lower()
+
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+
+    raise ValueError(f"{name} debe ser booleano: true/false.")

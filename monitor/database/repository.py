@@ -127,6 +127,14 @@ class ConcursoRepository:
 
         return rows
 
+    def get_latest(self) -> Concurso | None:
+        rows = self.list_recent(limit=1)
+
+        if not rows:
+            return None
+
+        return self._row_to_concurso(rows[0])
+
     def list_by_publication_date(
         self,
         fecha_publicacion: str,
@@ -194,3 +202,27 @@ class ConcursoRepository:
             return None
 
         return value.isoformat(timespec="seconds")
+
+    @staticmethod
+    def _text_to_datetime(value: str | None) -> datetime | None:
+        if value is None:
+            return None
+
+        return datetime.fromisoformat(value)
+
+    @classmethod
+    def _row_to_concurso(cls, row: sqlite3.Row) -> Concurso:
+        return Concurso(
+            id=row["id"],
+            numero=row["numero"],
+            descripcion=row["descripcion"],
+            estado=row["estado"],
+            entidad_federativa=row["entidad_federativa"],
+            tipo_procedimiento=row["tipo_procedimiento"],
+            tipo_contratacion=row["tipo_contratacion"],
+            fecha_publicacion=cls._text_to_datetime(row["fecha_publicacion"]),
+            proveedor_adjudicado=row["proveedor_adjudicado"],
+            monto=row["monto"],
+            fecha_limite_ofertas=cls._text_to_datetime(row["fecha_limite_ofertas"]),
+            fecha_fallo=cls._text_to_datetime(row["fecha_fallo"]),
+        )

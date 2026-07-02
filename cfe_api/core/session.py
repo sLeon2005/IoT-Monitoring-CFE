@@ -23,20 +23,16 @@ class CFESession:
     BASE_URL = "https://msc.cfe.mx"
     HOME_URL = f"{BASE_URL}/Aplicaciones/NCFE/Concursos/"
 
-    def __init__(self, timeout: int = 30):
+    def __init__(
+        self,
+        timeout: int = 30,
+        cookie_header: str | None = None,
+        csrf_token: str | None = None,
+    ):
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/126.0.0.0 Safari/537.36"
-                ),
-                "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
-            }
-        )
-        self.csrf_token: str | None = None
+        self.cookie_header = cookie_header
+        self.csrf_token: str | None = csrf_token
 
     def initialize(self) -> None:
         """
@@ -44,6 +40,10 @@ class CFESession:
 
         Debe llamarse una sola vez al iniciar.
         """
+
+        if self.cookie_header and self.csrf_token:
+            self._load_cookie_header(self.cookie_header)
+            return
 
         response = self.session.get(
             self.HOME_URL,
@@ -65,6 +65,18 @@ class CFESession:
             )
 
         self.csrf_token = token["value"]
+
+    def _load_cookie_header(self, cookie_header: str) -> None:
+        for item in cookie_header.split(";"):
+            if "=" not in item:
+                continue
+
+            name, value = item.split("=", 1)
+            self.session.cookies.set(
+                name.strip(),
+                value.strip(),
+                domain="msc.cfe.mx",
+            )
 
     @property
     def token(self) -> str:

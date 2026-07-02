@@ -40,12 +40,31 @@ TELEGRAM_CHAT_ID=
 MONITOR_DB_PATH=data/monitor.sqlite3
 MONITOR_INTERVAL_SECONDS=300
 MONITOR_LOG_LEVEL=INFO
+CFE_COOKIE_HEADER=
+CFE_REQUEST_VERIFICATION_TOKEN=
+CFE_SESSION_CACHE_PATH=data/cfe_session.json
+CFE_BROWSER_PROFILE_DIR=data/browser-profile
+CFE_BROWSER_BOOTSTRAP_ENABLED=false
+CFE_BROWSER_HEADLESS=false
+CFE_BROWSER_TIMEOUT_MS=60000
 DASHBOARD_HOST=127.0.0.1
 DASHBOARD_PORT=8000
-DASHBOARD_REFRESH_SECONDS=30
+DASHBOARD_REFRESH_SECONDS=120
 ```
 
 Telegram es opcional. Si no hay credenciales, el monitor sigue funcionando sin notificaciones.
+
+Probar Telegram sin consultar CFE:
+
+```powershell
+python -m monitor.notifications.telegram --test
+```
+
+Enviar un texto especifico:
+
+```powershell
+python -m monitor.notifications.telegram --test --message "Monitor CFE en linea"
+```
 
 ## Ejecutar la SDK
 
@@ -83,8 +102,59 @@ python -m monitor.main
 
 El monitor consulta CFE, guarda concursos en SQLite y solo emite eventos para concursos nuevos.
 
+Probar la notificacion de concurso usando el registro mas reciente ya guardado en SQLite:
+
+```powershell
+python -m monitor.main --notify-existing-latest
+```
+
+Este comando no consulta CFE ni marca el concurso como nuevo; solo sirve para validar
+el formato y envio de Telegram con datos reales.
+
 Si CFE bloquea temporalmente la sesion HTTP con `403`, el monitor registra el estado como
 `blocked`, conserva los datos historicos y reintenta en el siguiente ciclo.
+
+Si el navegador abre el portal pero Python recibe `403`, existen dos opciones.
+
+La opcion manual es copiar a `.env`:
+
+```env
+CFE_COOKIE_HEADER=nombre=valor; otro=valor
+CFE_REQUEST_VERIFICATION_TOKEN=token_del_input_oculto
+```
+
+El token corresponde al input `__RequestVerificationToken` de la pagina de concursos.
+Estos valores no deben versionarse.
+
+La opcion automatizada usa Chromium mediante Playwright para abrir el portal, esperar el
+input oculto, extraer cookies y guardar una sesion local en `data/cfe_session.json`.
+
+Instala dependencias:
+
+```powershell
+pip install playwright
+python -m playwright install chromium
+```
+
+Activa el bootstrap en `.env`:
+
+```env
+CFE_BROWSER_BOOTSTRAP_ENABLED=true
+CFE_BROWSER_HEADLESS=false
+CFE_SESSION_CACHE_PATH=data/cfe_session.json
+CFE_BROWSER_PROFILE_DIR=data/browser-profile
+```
+
+Despues ejecuta el monitor normalmente:
+
+```powershell
+python -m monitor.main --once
+```
+
+En el primer arranque puede abrirse una ventana de Chromium. Si CFE muestra una validacion
+visual, resuelvela en esa ventana; el monitor continuara cuando aparezca el token del portal.
+Si la sesion cacheada vence y CFE responde `403`, el monitor borra la cache para renovarla
+en el siguiente ciclo.
 
 ## Ejecutar el dashboard
 
@@ -105,6 +175,9 @@ http://127.0.0.1:8000
 En Raspberry Pi se puede abrir esa URL con Chromium en modo kiosk para mostrarla por HDMI.
 
 El dashboard incluye un placeholder de clima. Todavia no consulta ninguna API externa.
+La tabla de pantalla muestra solo datos operativos: numero, entidad, estado, tipo,
+fecha de publicacion y descripcion.
+El indicador WiFi usa `netsh` en Windows y `/proc/net/wireless` en Raspberry/Linux.
 
 ## Inspeccionar SQLite
 

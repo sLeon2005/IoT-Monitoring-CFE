@@ -30,8 +30,13 @@ class CFEMonitor:
         cls,
         db_path: str,
         notifiers: list[Notifier] | None = None,
+        cfe_cookie_header: str | None = None,
+        cfe_request_verification_token: str | None = None,
     ) -> "CFEMonitor":
-        session = CFESession()
+        session = CFESession(
+            cookie_header=cfe_cookie_header,
+            csrf_token=cfe_request_verification_token,
+        )
         session.initialize()
 
         repository = ConcursoRepository(db_path)
