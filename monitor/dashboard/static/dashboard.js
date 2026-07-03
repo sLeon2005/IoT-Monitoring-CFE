@@ -91,7 +91,7 @@ async function loadConcursos() {
     render(payload);
   } catch (error) {
     setMetricSource("Local error");
-    statusLabel.textContent = "Sin conexion local";
+    statusLabel.textContent = "Sin conexión local";
     statusDetail.textContent = "No fue posible leer SQLite";
     statusDot.style.background = "var(--red)";
   }
@@ -266,8 +266,8 @@ function renderSourceStatus(sourceStatus) {
 
   if (status === "blocked") {
     setMetricSource("Bloqueado");
-    statusLabel.textContent = "CFE sin conexion";
-    statusDetail.textContent = "Portal bloqueo la sesion HTTP";
+    statusLabel.textContent = "CFE sin conexión";
+    statusDetail.textContent = "Portal bloqueó la sesión HTTP";
     statusDot.style.background = "var(--red)";
     return;
   }
@@ -292,7 +292,7 @@ function setMetricSource(value) {
 function updateActivityStatus(latestDate) {
   if (!latestDate) {
     statusLabel.textContent = "Fecha no disponible";
-    statusDetail.textContent = "Ultimo concurso sin fecha";
+    statusDetail.textContent = "Último concurso sin fecha";
     statusDot.style.background = "var(--yellow)";
     return;
   }
