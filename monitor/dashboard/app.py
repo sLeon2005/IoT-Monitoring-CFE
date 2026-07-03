@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -44,6 +44,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_url.path == "/api/concursos":
             self._send_concursos(parsed_url.query)
+            return
+
+        if parsed_url.path == "/api/stats/recent-publications":
+            self._send_recent_publication_stats()
             return
 
         if parsed_url.path == "/api/system/wifi":
@@ -108,6 +112,33 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         }
         self._send_json(payload)
 
+    def _send_recent_publication_stats(self) -> None:
+        today = datetime.now().date()
+        start_date = today - timedelta(days=6)
+        counts = self.server.repository.count_by_publication_date(
+            start_date=start_date,
+            end_date=today,
+        )
+        days = []
+
+        for offset in range(7):
+            current_date = start_date + timedelta(days=offset)
+            date_key = current_date.isoformat()
+            days.append(
+                {
+                    "date": date_key,
+                    "label": _weekday_initial(current_date.weekday()),
+                    "count": counts.get(date_key, 0),
+                    "is_today": current_date == today,
+                }
+            )
+
+        payload = {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "days": days,
+        }
+        self._send_json(payload)
+
     def _send_weather(self) -> None:
         try:
             snapshot = get_configured_weather(self.server.config)
@@ -142,6 +173,10 @@ def _content_type_for(path: str) -> str:
         return "image/svg+xml"
 
     return "application/octet-stream"
+
+
+def _weekday_initial(weekday: int) -> str:
+    return ["L", "M", "X", "J", "V", "S", "D"][weekday]
 
 
 def _row_to_dict(row) -> dict:

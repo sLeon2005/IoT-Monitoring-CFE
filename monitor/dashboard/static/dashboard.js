@@ -12,6 +12,7 @@ const weatherIcon = document.querySelector("#weather-icon");
 const weatherTemp = document.querySelector("#weather-temp");
 const weatherCondition = document.querySelector("#weather-condition");
 const wifiIcon = document.querySelector("#wifi-icon");
+const activityBars = document.querySelector("#activity-bars");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -88,7 +89,7 @@ async function loadConcursos() {
     refreshSeconds = payload.refresh_seconds || refreshSeconds;
     render(payload);
   } catch (error) {
-    metricSource.textContent = "Local error";
+    setMetricSource("Local error");
     statusLabel.textContent = "Sin conexion local";
     statusDetail.textContent = "No fue posible leer SQLite";
     statusDot.style.background = "var(--red)";
@@ -133,6 +134,22 @@ async function loadWeather() {
   }
 }
 
+async function loadRecentPublicationStats() {
+  try {
+    const response = await fetch("/api/stats/recent-publications", {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    renderRecentPublicationStats(await response.json());
+  } catch (error) {
+    renderRecentPublicationStats({ days: buildEmptyRecentDays() });
+  }
+}
+
 function render(payload) {
   const items = payload.items || [];
   metricCount.textContent = String(items.length);
@@ -153,6 +170,52 @@ function render(payload) {
   }
 
   renderSourceStatus(payload.source_status);
+}
+
+function renderRecentPublicationStats(payload) {
+  const days = Array.isArray(payload.days) ? payload.days : [];
+  const normalizedDays = days.length > 0 ? days : buildEmptyRecentDays();
+  const maxCount = Math.max(1, ...normalizedDays.map((day) => Number(day.count) || 0));
+
+  activityBars.innerHTML = normalizedDays
+    .map((day) => {
+      const count = Math.max(0, Number(day.count) || 0);
+      const height = count === 0 ? 0 : Math.max(12, Math.round((count / maxCount) * 100));
+      const classes = ["activity-day"];
+
+      if (day.is_today) {
+        classes.push("is-today");
+      }
+
+      return `
+        <div class="${classes.join(" ")}">
+          <div class="activity-bar-track">
+            <span class="activity-bar-fill" style="height: ${height}%"></span>
+          </div>
+          <span class="activity-day-label">${escapeHtml(day.label || "")}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function buildEmptyRecentDays() {
+  const labels = ["L", "M", "X", "J", "V", "S", "D"];
+  const today = new Date();
+  const days = [];
+
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+
+    days.push({
+      label: labels[(date.getDay() + 6) % 7],
+      count: 0,
+      is_today: offset === 0,
+    });
+  }
+
+  return days;
 }
 
 function renderRow(item) {
@@ -190,12 +253,12 @@ function renderSourceStatus(sourceStatus) {
   const message = sourceStatus?.message || "Monitor sin estado registrado";
 
   if (status === "ok" || status === "connected") {
-    metricSource.textContent = "OK";
+    setMetricSource("OK");
     return;
   }
 
   if (status === "blocked") {
-    metricSource.textContent = "Bloqueado";
+    setMetricSource("Bloqueado");
     statusLabel.textContent = "CFE sin conexion";
     statusDetail.textContent = "Portal bloqueo la sesion HTTP";
     statusDot.style.background = "var(--red)";
@@ -203,14 +266,20 @@ function renderSourceStatus(sourceStatus) {
   }
 
   if (status === "error") {
-    metricSource.textContent = "Error";
+    setMetricSource("Error");
     statusLabel.textContent = "CFE con error";
     statusDetail.textContent = message;
     statusDot.style.background = "var(--red)";
     return;
   }
 
-  metricSource.textContent = "Sin datos";
+  setMetricSource("Sin datos");
+}
+
+function setMetricSource(value) {
+  if (metricSource) {
+    metricSource.textContent = value;
+  }
 }
 
 function updateActivityStatus(latestDate) {
@@ -371,12 +440,14 @@ function normalizeWifiBars(value) {
 }
 
 loadConcursos();
+loadRecentPublicationStats();
 loadWifiStatus();
 loadWeather();
 updateClock();
 renderWeather(placeholderWeather);
 
 setInterval(loadConcursos, refreshSeconds * 1000);
+setInterval(loadRecentPublicationStats, refreshSeconds * 1000);
 setInterval(loadWifiStatus, 30000);
 setInterval(() => loadWeather(), weatherRefreshSeconds * 1000);
 setInterval(updateClock, 1000);

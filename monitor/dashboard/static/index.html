@@ -54,16 +54,18 @@
           <strong id="metric-count">0</strong>
         </div>
         <div>
-          <span class="metric-label">ULTIMA PUBLICACIÓN</span>
+          <span class="metric-label">ULTIMA PUBLICACION</span>
           <strong id="metric-last">--</strong>
         </div>
         <div>
-          <span class="metric-label">ACTUALIZACIÓN</span>
+          <span class="metric-label">ACTUALIZACION</span>
           <strong id="metric-updated">--</strong>
         </div>
-        <div>
-          <span class="metric-label">CONEXIÓN CFE</span>
-          <strong id="metric-source">--</strong>
+        <div class="activity-chart" aria-label="Concursos publicados en los ultimos 7 dias">
+          <div class="activity-chart-header">
+            <span class="metric-label">ULTIMOS 7 DIAS</span>
+          </div>
+          <div class="activity-bars" id="activity-bars"></div>
         </div>
       </section>
 
@@ -71,11 +73,11 @@
         <table>
           <thead>
             <tr>
-              <th>NÚMERO</th>
+              <th>NUMERO</th>
               <th>ENTIDAD</th>
               <th>TIPO</th>
-              <th>PUBLICACIÓN</th>
-              <th>DESCRIPCIÓN</th>
+              <th>PUBLICACION</th>
+              <th>DESCRIPCION</th>
             </tr>
           </thead>
           <tbody id="concursos-body">

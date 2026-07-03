@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from cfe_api.models.concurso import Concurso
@@ -153,6 +153,25 @@ class ConcursoRepository:
             ).fetchall()
 
         return rows
+
+    def count_by_publication_date(
+        self,
+        start_date: date,
+        end_date: date,
+    ) -> dict[str, int]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT substr(fecha_publicacion, 1, 10) AS publication_date,
+                       COUNT(*) AS total
+                FROM concursos
+                WHERE substr(fecha_publicacion, 1, 10) BETWEEN ? AND ?
+                GROUP BY publication_date
+                """,
+                (start_date.isoformat(), end_date.isoformat()),
+            ).fetchall()
+
+        return {row["publication_date"]: row["total"] for row in rows}
 
     def set_monitor_status(self, status: str, message: str) -> None:
         updated_at = datetime.now().isoformat(timespec="seconds")
