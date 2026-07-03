@@ -39,6 +39,19 @@ body {
   gap: 24px;
 }
 
+.brand {
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(180px, 22vw, 360px);
+  padding-bottom: 8px;
+  object-fit: contain;
+}
+
 .environment-panel {
   width: max-content;
   padding: 14px 16px;
@@ -182,7 +195,25 @@ h1 {
 .activity-chart-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.activity-total {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.activity-total::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 10px 2px 0;
+  border-radius: 999px;
+  background: var(--muted);
 }
 
 .activity-bars {
@@ -522,6 +553,15 @@ td:nth-child(5) {
   .status {
     margin-left: 0;
     min-width: 0;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand-logo {
+    width: min(100%, 300px);
+    max-height: 56px;
   }
 
   h1 {

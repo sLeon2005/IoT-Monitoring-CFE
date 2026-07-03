@@ -13,6 +13,7 @@ const weatherTemp = document.querySelector("#weather-temp");
 const weatherCondition = document.querySelector("#weather-condition");
 const wifiIcon = document.querySelector("#wifi-icon");
 const activityBars = document.querySelector("#activity-bars");
+const activityTotal = document.querySelector("#activity-total");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -175,7 +176,13 @@ function render(payload) {
 function renderRecentPublicationStats(payload) {
   const days = Array.isArray(payload.days) ? payload.days : [];
   const normalizedDays = days.length > 0 ? days : buildEmptyRecentDays();
+  const total = normalizedDays.reduce(
+    (sum, day) => sum + Math.max(0, Number(day.count) || 0),
+    0,
+  );
   const maxCount = Math.max(1, ...normalizedDays.map((day) => Number(day.count) || 0));
+
+  activityTotal.textContent = `${total} ${total === 1 ? "concurso" : "concursos"}`;
 
   activityBars.innerHTML = normalizedDays
     .map((day) => {

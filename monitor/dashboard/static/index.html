@@ -9,9 +9,12 @@
   <body>
     <main class="screen">
       <header class="topbar">
-        <section class="brand">
-          <p class="eyebrow">Monitoreo CFE</p>
-          <h1>Concursos Publicados</h1>
+        <section class="brand" aria-label="EEPAT">
+          <img
+            class="brand-logo"
+            src="/static/brand/eepat_blanco.svg"
+            alt="EEPAT"
+          >
         </section>
         <section class="status" id="status-panel">
           <span class="status-dot" id="status-dot"></span>
@@ -64,6 +67,7 @@
         <div class="activity-chart" aria-label="Concursos publicados en los ultimos 7 dias">
           <div class="activity-chart-header">
             <span class="metric-label">ULTIMOS 7 DIAS</span>
+            <span class="activity-total" id="activity-total">0 concursos</span>
           </div>
           <div class="activity-bars" id="activity-bars"></div>
         </div>
