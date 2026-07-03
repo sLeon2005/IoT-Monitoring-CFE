@@ -21,6 +21,7 @@ const placeholderWeather = {
 
 let refreshSeconds = 30;
 let weatherRefreshSeconds = 900;
+const selectedDate = getSelectedDate();
 
 const ENTITY_ALIASES = {
   aguascalientes: "aguascalientes",
@@ -71,7 +72,13 @@ const ENTITY_DISPLAY_NAMES = {
 
 async function loadConcursos() {
   try {
-    const response = await fetch("/api/concursos?limit=30", { cache: "no-store" });
+    const params = new URLSearchParams({ limit: "30" });
+
+    if (selectedDate) {
+      params.set("date", selectedDate);
+    }
+
+    const response = await fetch(`/api/concursos?${params}`, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -295,6 +302,16 @@ function parseDate(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getSelectedDate() {
+  const date = new URLSearchParams(window.location.search).get("date");
+
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return null;
+  }
+
+  return date;
 }
 
 function escapeHtml(value) {
