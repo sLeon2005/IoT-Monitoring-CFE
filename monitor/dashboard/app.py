@@ -165,10 +165,27 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
     def _send_recent_publication_stats(self) -> None:
         today = datetime.now().date()
         start_date = today - timedelta(days=6)
-        counts = self.server.repository.count_by_publication_date(
+        rows = self.server.repository.list_by_publication_date_range(
             start_date=start_date,
             end_date=today,
         )
+        totals_by_date: dict[str, int] = {}
+        relevant_by_date: dict[str, int] = {}
+
+        for row in rows:
+            date_key = (row["fecha_publicacion"] or "")[:10]
+
+            if not date_key:
+                continue
+
+            totals_by_date[date_key] = totals_by_date.get(date_key, 0) + 1
+
+            if match_description(
+                row["descripcion"],
+                self.server.keyword_terms,
+            ).is_relevant:
+                relevant_by_date[date_key] = relevant_by_date.get(date_key, 0) + 1
+
         days = []
 
         for offset in range(7):
@@ -178,7 +195,8 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
                 {
                     "date": date_key,
                     "label": _weekday_initial(current_date.weekday()),
-                    "count": counts.get(date_key, 0),
+                    "count": totals_by_date.get(date_key, 0),
+                    "relevant_count": relevant_by_date.get(date_key, 0),
                     "is_today": current_date == today,
                 }
             )

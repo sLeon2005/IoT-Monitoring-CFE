@@ -280,14 +280,27 @@ function renderRecentPublicationStats(payload) {
     (sum, day) => sum + Math.max(0, Number(day.count) || 0),
     0,
   );
+  const relevantTotal = normalizedDays.reduce(
+    (sum, day) => sum + Math.max(0, Number(day.relevant_count) || 0),
+    0,
+  );
   const maxCount = Math.max(1, ...normalizedDays.map((day) => Number(day.count) || 0));
 
-  activityTotal.textContent = `${total} ${total === 1 ? "concurso" : "concursos"}`;
+  activityTotal.textContent = `${total} ${pluralizeConcursos(total)} / ${relevantTotal} relevantes`;
 
   activityBars.innerHTML = normalizedDays
     .map((day) => {
       const count = Math.max(0, Number(day.count) || 0);
+      const relevantCount = Math.min(
+        count,
+        Math.max(0, Number(day.relevant_count) || 0),
+      );
       const height = count === 0 ? 0 : Math.max(12, Math.round((count / maxCount) * 100));
+      const relevantHeight =
+        relevantCount === 0
+          ? 0
+          : Math.max(4, Math.round((relevantCount / maxCount) * 100));
+      const relevantMinHeight = relevantCount > 0 ? "5px" : "0";
       const classes = ["activity-day"];
 
       if (day.is_today) {
@@ -298,6 +311,10 @@ function renderRecentPublicationStats(payload) {
         <div class="${classes.join(" ")}">
           <div class="activity-bar-track">
             <span class="activity-bar-fill" style="height: ${height}%"></span>
+            <span
+              class="activity-bar-relevant"
+              style="height: ${relevantHeight}%; min-height: ${relevantMinHeight}"
+            ></span>
           </div>
           <span class="activity-day-label">${escapeHtml(day.label || "")}</span>
         </div>
@@ -318,6 +335,7 @@ function buildEmptyRecentDays() {
     days.push({
       label: labels[(date.getDay() + 6) % 7],
       count: 0,
+      relevant_count: 0,
       is_today: offset === 0,
     });
   }

@@ -173,6 +173,24 @@ class ConcursoRepository:
 
         return {row["publication_date"]: row["total"] for row in rows}
 
+    def list_by_publication_date_range(
+        self,
+        start_date: date,
+        end_date: date,
+    ) -> list[sqlite3.Row]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM concursos
+                WHERE substr(fecha_publicacion, 1, 10) BETWEEN ? AND ?
+                ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
+                """,
+                (start_date.isoformat(), end_date.isoformat()),
+            ).fetchall()
+
+        return rows
+
     def set_monitor_status(self, status: str, message: str) -> None:
         updated_at = datetime.now().isoformat(timespec="seconds")
 
