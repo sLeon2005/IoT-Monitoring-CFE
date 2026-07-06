@@ -104,10 +104,53 @@ def _get_linux_wifi_status() -> dict:
         except ValueError:
             continue
 
+        interface_name = interface.strip()
         signal_percent = round(max(0, min(100, quality / 70 * 100)))
-        return _connected_status(signal_percent, interface.strip())
+        return _connected_status(signal_percent, _get_linux_ssid(interface_name))
 
     return _disconnected_status("Sin senal")
+
+
+def _get_linux_ssid(interface: str) -> str | None:
+    ssid = _run_linux_ssid_command(["iwgetid", interface, "--raw"])
+
+    if ssid:
+        return ssid
+
+    nmcli_output = _run_linux_ssid_command(
+        ["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"]
+    )
+
+    if not nmcli_output:
+        return None
+
+    for line in nmcli_output.splitlines():
+        active, _, ssid = line.partition(":")
+
+        if active == "yes" and ssid:
+            return ssid.replace(r"\:", ":")
+
+    return None
+
+
+def _run_linux_ssid_command(command: list[str]) -> str | None:
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+            timeout=3,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    return result.stdout.strip() or None
 
 
 def _connected_status(signal_percent: int, ssid: str | None) -> dict:

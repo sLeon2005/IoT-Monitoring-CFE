@@ -12,6 +12,7 @@ const weatherIcon = document.querySelector("#weather-icon");
 const weatherTemp = document.querySelector("#weather-temp");
 const weatherCondition = document.querySelector("#weather-condition");
 const wifiIcon = document.querySelector("#wifi-icon");
+const wifiSsid = document.querySelector("#wifi-ssid");
 const activityBars = document.querySelector("#activity-bars");
 const activityTotal = document.querySelector("#activity-total");
 
@@ -431,9 +432,15 @@ function renderWeather(weather) {
 
 function renderWifi(wifi) {
   const bars = normalizeWifiBars(wifi.bars);
+  const ssid = wifi.connected ? wifi.ssid || "Red conectada" : "Sin red";
 
   wifiIcon.src = `/static/wifi-icons/wifi_${bars}.svg`;
   wifiIcon.alt = wifi.label || "Estado WiFi";
+
+  if (wifiSsid) {
+    wifiSsid.textContent = ssid;
+    wifiSsid.title = ssid;
+  }
 }
 
 function normalizeWifiBars(value) {
