@@ -16,17 +16,27 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 .screen {
-  min-height: 100vh;
-  padding: 28px;
+  --screen-padding: 28px;
+
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--screen-padding);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -315,9 +325,12 @@ h1 {
 
 .board {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  margin-bottom: calc(-1 * var(--screen-padding));
+  overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
   background: var(--panel);
 }
 
@@ -558,7 +571,7 @@ td:nth-child(5) {
 
 @media (max-width: 900px) {
   .screen {
-    padding: 16px;
+    --screen-padding: 16px;
   }
 
   .topbar,
