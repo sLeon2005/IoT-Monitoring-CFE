@@ -220,6 +220,23 @@ Usar una base especifica:
 python -m monitor.database.inspect --db data/monitor.sqlite3
 ```
 
+## Herramientas puntuales
+
+Resolver nombres de eventos CFE por numero, sin guardar nada en SQLite:
+
+```powershell
+python -m tools.resolve_cfe_event_names 12345 67890
+```
+
+Tambien se puede usar un archivo con un numero por linea y exportar CSV:
+
+```powershell
+python -m tools.resolve_cfe_event_names --input-file data/eventos.txt --format csv --output data/eventos_nombres.csv
+```
+
+La herramienta usa la misma sesion CFE configurada para el monitor: primero `.env`,
+luego `data/cfe_session.json` y, si esta habilitado, bootstrap con Chromium.
+
 ## Notas de arquitectura
 
 - `cfe_api` no conoce Telegram, SQLite, dashboard, GPIO ni Raspberry Pi.
