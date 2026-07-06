@@ -113,7 +113,7 @@ class ConcursoRepository:
 
         return nuevos
 
-    def list_recent(self, limit: int = 50) -> list[sqlite3.Row]:
+    def list_recent(self, limit: int = 100) -> list[sqlite3.Row]:
         with self._connect() as connection:
             rows = connection.execute(
                 """
@@ -138,19 +138,22 @@ class ConcursoRepository:
     def list_by_publication_date(
         self,
         fecha_publicacion: str,
-        limit: int = 50,
+        limit: int | None = 100,
     ) -> list[sqlite3.Row]:
+        query = """
+            SELECT *
+            FROM concursos
+            WHERE substr(fecha_publicacion, 1, 10) = ?
+            ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
+            """
+        params: tuple[str] | tuple[str, int] = (fecha_publicacion,)
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params = (fecha_publicacion, limit)
+
         with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT *
-                FROM concursos
-                WHERE substr(fecha_publicacion, 1, 10) = ?
-                ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
-                LIMIT ?
-                """,
-                (fecha_publicacion, limit),
-            ).fetchall()
+            rows = connection.execute(query, params).fetchall()
 
         return rows
 

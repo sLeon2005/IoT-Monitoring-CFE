@@ -111,7 +111,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
     def _send_concursos(self, query: str) -> None:
         params = parse_qs(query)
-        limit = _parse_limit(params.get("limit", ["50"])[0])
+        limit = _parse_limit(params["limit"][0]) if "limit" in params else None
         view = params.get("view", [self.server.dashboard_state.get_view()])[0]
 
         if not is_valid_view(view):
@@ -207,7 +207,7 @@ def _parse_limit(value: str) -> int:
     try:
         limit = int(value)
     except ValueError:
-        return 50
+        return 100
 
     return max(1, min(limit, 200))
 

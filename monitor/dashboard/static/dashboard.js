@@ -28,6 +28,7 @@ let refreshSeconds = 30;
 let weatherRefreshSeconds = 900;
 let dashboardView = "all";
 const selectedDate = getSelectedDate();
+const selectedView = getSelectedView();
 
 const ENTITY_ALIASES = {
   aguascalientes: "aguascalientes",
@@ -78,8 +79,8 @@ const ENTITY_DISPLAY_NAMES = {
 
 async function loadConcursos() {
   try {
-    dashboardView = await loadDashboardState();
-    const params = new URLSearchParams({ limit: "30" });
+    dashboardView = selectedView || (await loadDashboardState());
+    const params = new URLSearchParams({ limit: "100" });
 
     if (selectedDate) {
       params.set("date", selectedDate);
@@ -115,7 +116,7 @@ async function ensureRelevantCount(payload) {
     return;
   }
 
-  const params = new URLSearchParams({ limit: "30", view: "relevant" });
+  const params = new URLSearchParams({ limit: "100", view: "relevant" });
 
   if (selectedDate) {
     params.set("date", selectedDate);
@@ -481,13 +482,24 @@ function parseDate(value) {
 }
 
 function getSelectedDate() {
-  const date = new URLSearchParams(window.location.search).get("date");
+  const rawDate = new URLSearchParams(window.location.search).get("date");
+  const date = rawDate?.split(/[?&]/)[0];
 
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return null;
   }
 
   return date;
+}
+
+function getSelectedView() {
+  const view = new URLSearchParams(window.location.search).get("view");
+
+  if (view === "all" || view === "relevant") {
+    return view;
+  }
+
+  return null;
 }
 
 function escapeHtml(value) {

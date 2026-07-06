@@ -66,6 +66,8 @@ class CFEMonitor:
         for evento in eventos:
             self._emit(evento)
 
+        self._flush_notifier_summaries()
+
         return eventos
 
     def _detect_new(self, concursos: list[Concurso]) -> list[Concurso]:
@@ -80,3 +82,15 @@ class CFEMonitor:
                     "Error notificando concurso nuevo: %s",
                     event.concurso.numero,
                 )
+
+    def _flush_notifier_summaries(self) -> None:
+        for notifier in self.notifiers:
+            flush_summary = getattr(notifier, "flush_summary", None)
+
+            if flush_summary is None:
+                continue
+
+            try:
+                flush_summary()
+            except Exception:
+                logger.exception("Error generando resumen de notificador.")
