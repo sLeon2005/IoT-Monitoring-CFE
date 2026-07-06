@@ -1,5 +1,6 @@
 const body = document.querySelector("#concursos-body");
 const metricCount = document.querySelector("#metric-count");
+const metricCountLabel = document.querySelector("#metric-count-label");
 const metricLast = document.querySelector("#metric-last");
 const metricUpdated = document.querySelector("#metric-updated");
 const metricSource = document.querySelector("#metric-source");
@@ -15,6 +16,7 @@ const wifiIcon = document.querySelector("#wifi-icon");
 const wifiSsid = document.querySelector("#wifi-ssid");
 const activityBars = document.querySelector("#activity-bars");
 const activityTotal = document.querySelector("#activity-total");
+const tableMode = document.querySelector("#table-mode");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -24,6 +26,7 @@ const placeholderWeather = {
 
 let refreshSeconds = 30;
 let weatherRefreshSeconds = 900;
+let dashboardView = "all";
 const selectedDate = getSelectedDate();
 
 const ENTITY_ALIASES = {
@@ -75,11 +78,14 @@ const ENTITY_DISPLAY_NAMES = {
 
 async function loadConcursos() {
   try {
+    dashboardView = await loadDashboardState();
     const params = new URLSearchParams({ limit: "30" });
 
     if (selectedDate) {
       params.set("date", selectedDate);
     }
+
+    params.set("view", dashboardView);
 
     const response = await fetch(`/api/concursos?${params}`, { cache: "no-store" });
 
@@ -88,6 +94,7 @@ async function loadConcursos() {
     }
 
     const payload = await response.json();
+    await ensureRelevantCount(payload);
     refreshSeconds = payload.refresh_seconds || refreshSeconds;
     render(payload);
   } catch (error) {
@@ -96,6 +103,39 @@ async function loadConcursos() {
     statusDetail.textContent = "No fue posible leer SQLite";
     statusDot.style.background = "var(--red)";
   }
+}
+
+async function ensureRelevantCount(payload) {
+  if (Number.isFinite(payload.relevant_count)) {
+    return;
+  }
+
+  if ((payload.view || dashboardView) === "relevant") {
+    payload.relevant_count = Array.isArray(payload.items) ? payload.items.length : 0;
+    return;
+  }
+
+  const params = new URLSearchParams({ limit: "30", view: "relevant" });
+
+  if (selectedDate) {
+    params.set("date", selectedDate);
+  }
+
+  const response = await fetch(`/api/concursos?${params}`, { cache: "no-store" });
+
+  if (!response.ok) {
+    payload.relevant_count = 0;
+    return;
+  }
+
+  const relevantPayload = await response.json();
+  payload.relevant_count = Number.isFinite(relevantPayload.relevant_count)
+    ? relevantPayload.relevant_count
+    : Number.isFinite(relevantPayload.count)
+      ? relevantPayload.count
+      : Array.isArray(relevantPayload.items)
+        ? relevantPayload.items.length
+        : 0;
 }
 
 async function loadWifiStatus() {
@@ -152,17 +192,49 @@ async function loadRecentPublicationStats() {
   }
 }
 
+async function loadDashboardState() {
+  const response = await fetch("/api/dashboard/state", { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+
+  if (payload.view === "relevant" || payload.view === "all") {
+    return payload.view;
+  }
+
+  return "all";
+}
+
 function render(payload) {
   const items = payload.items || [];
-  metricCount.textContent = String(items.length);
+  const view = payload.view || dashboardView;
+  const totalCount = Number.isFinite(payload.total_count) ? payload.total_count : items.length;
+  const relevantCount = Number.isFinite(payload.relevant_count)
+    ? payload.relevant_count
+    : view === "relevant"
+      ? items.length
+      : 0;
+  const isRelevantView = view === "relevant";
+
+  renderMetricCounts({ totalCount, relevantCount });
+  renderTableMode(view);
   metricUpdated.textContent = formatDateTime(payload.generated_at);
 
   if (items.length === 0) {
     metricLast.textContent = "--";
-    statusLabel.textContent = "Sin concursos";
-    statusDetail.textContent = `Sin publicaciones para ${payload.fecha_publicacion || "hoy"}`;
+    statusLabel.textContent = isRelevantView ? "Sin relevantes" : "Sin concursos";
+    statusDetail.textContent = isRelevantView
+      ? `${totalCount} publicados en la fecha seleccionada`
+      : `Sin publicaciones para ${payload.fecha_publicacion || "hoy"}`;
     statusDot.style.background = "var(--yellow)";
-    body.innerHTML = '<tr><td colspan="5" class="empty">No hay concursos guardados.</td></tr>';
+    body.innerHTML = `<tr><td colspan="5" class="empty">${escapeHtml(
+      isRelevantView
+        ? "No hay concursos relevantes para esta fecha."
+        : "No hay concursos guardados.",
+    )}</td></tr>`;
   } else {
     const latest = items[0];
     const latestDate = parseDate(latest.fecha_publicacion || latest.detectado_en);
@@ -172,6 +244,33 @@ function render(payload) {
   }
 
   renderSourceStatus(payload.source_status);
+}
+
+function renderTableMode(view) {
+  if (!tableMode) {
+    return;
+  }
+
+  tableMode.textContent =
+    view === "relevant"
+      ? "Mostrando concursos relevantes"
+      : "Mostrando todos los concursos";
+}
+
+function renderMetricCounts({ totalCount, relevantCount }) {
+  metricCountLabel.textContent = selectedDate
+    ? "CONCURSOS PUBLICADOS / RELEVANTES"
+    : "PUBLICADOS HOY / RELEVANTES";
+  metricCount.innerHTML = `
+    <span class="metric-count-pair">
+      <span><b>${totalCount}</b><small>publicados</small></span>
+      <span><b>${relevantCount}</b><small>relevantes</small></span>
+    </span>
+  `;
+}
+
+function pluralizeConcursos(count) {
+  return count === 1 ? "concurso" : "concursos";
 }
 
 function renderRecentPublicationStats(payload) {

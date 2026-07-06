@@ -1,0 +1,30 @@
+# Terminos iniciales para concursos relevantes al giro electrico.
+# Una palabra o frase por linea. Las lineas que empiezan con # se ignoran.
+
+control prioritario
+controles prioritarios
+aislado sobre aislado
+herramienta menor
+puesta a tierra
+trabajo en alturas
+equipo y herramienta
+proteccion personal
+detector
+detectores
+detector de voltaje
+voltamperimetro
+voltamperimetros
+equipos de pruebas
+pertiga
+pertigas
+traje conductor
+rompecargas
+pinzas de compresion
+compresion hidraulica
+lineas de vida
+tensores
+escaleras
+herramienta electrica
+cizalla
+cizallas
+cables y accesorios

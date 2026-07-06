@@ -9,6 +9,8 @@ from urllib.parse import parse_qs, urlparse
 
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
+from monitor.dashboard.state import AVAILABLE_VIEWS, DashboardState, is_valid_view
+from monitor.filtering import load_keyword_terms, match_description
 from monitor.system.network import get_wifi_status
 from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
 
@@ -23,6 +25,8 @@ class DashboardServer(ThreadingHTTPServer):
         self.config = config
         self.repository = ConcursoRepository(config.db_path)
         self.repository.initialize()
+        self.dashboard_state = DashboardState()
+        self.keyword_terms = load_keyword_terms()
 
 
 class DashboardRequestHandler(BaseHTTPRequestHandler):
@@ -46,6 +50,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             self._send_concursos(parsed_url.query)
             return
 
+        if parsed_url.path == "/api/dashboard/state":
+            self._send_dashboard_state()
+            return
+
         if parsed_url.path == "/api/stats/recent-publications":
             self._send_recent_publication_stats()
             return
@@ -56,6 +64,16 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_url.path == "/api/weather":
             self._send_weather()
+            return
+
+        self.send_error(HTTPStatus.NOT_FOUND)
+
+    def do_POST(self) -> None:
+        parsed_url = urlparse(self.path)
+
+        if parsed_url.path == "/api/dashboard/mode/next":
+            view = self.server.dashboard_state.next_view()
+            self._send_dashboard_state(view=view)
             return
 
         self.send_error(HTTPStatus.NOT_FOUND)
@@ -94,6 +112,12 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
     def _send_concursos(self, query: str) -> None:
         params = parse_qs(query)
         limit = _parse_limit(params.get("limit", ["50"])[0])
+        view = params.get("view", [self.server.dashboard_state.get_view()])[0]
+
+        if not is_valid_view(view):
+            self.send_error(HTTPStatus.BAD_REQUEST, "Vista no soportada.")
+            return
+
         fecha_publicacion = params.get(
             "date",
             [datetime.now().strftime("%Y-%m-%d")],
@@ -102,15 +126,41 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             fecha_publicacion=fecha_publicacion,
             limit=limit,
         )
+        total_count = len(rows)
+        relevant_rows = [
+            row
+            for row in rows
+            if match_description(
+                row["descripcion"],
+                self.server.keyword_terms,
+            ).is_relevant
+        ]
+        filtered_rows = rows
+
+        if view == "relevant":
+            filtered_rows = relevant_rows
+
         payload = {
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "fecha_publicacion": fecha_publicacion,
+            "view": view,
             "refresh_seconds": self.server.config.dashboard_refresh_seconds,
             "source_status": self.server.repository.get_monitor_status(),
-            "count": len(rows),
-            "items": [_row_to_dict(row) for row in rows],
+            "count": len(filtered_rows),
+            "total_count": total_count,
+            "relevant_count": len(relevant_rows),
+            "items": [_row_to_dict(row) for row in filtered_rows],
         }
         self._send_json(payload)
+
+    def _send_dashboard_state(self, view: str | None = None) -> None:
+        current_view = view or self.server.dashboard_state.get_view()
+        self._send_json(
+            {
+                "view": current_view,
+                "available_views": list(AVAILABLE_VIEWS),
+            }
+        )
 
     def _send_recent_publication_stats(self) -> None:
         today = datetime.now().date()

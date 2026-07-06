@@ -9,7 +9,9 @@ from cfe_api.core.errors import CFEAPIError, CFEBlockedError
 from monitor.cfe_session import invalidate_cached_cfe_session, resolve_cfe_session_data
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
+from monitor.filtering import load_keyword_terms, match_concurso
 from monitor.monitor import CFEMonitor
+from monitor.notifications.relevant import RelevantConcursoNotifier
 from monitor.notifications.telegram import TelegramNotifier
 
 
@@ -18,10 +20,15 @@ logger = logging.getLogger(__name__)
 
 def build_notifiers(config: MonitorConfig):
     if config.telegram_enabled:
+        keyword_terms = load_keyword_terms()
+        telegram_notifier = TelegramNotifier(
+            bot_token=config.telegram_bot_token,
+            chat_id=config.telegram_chat_id,
+        )
         return [
-            TelegramNotifier(
-                bot_token=config.telegram_bot_token,
-                chat_id=config.telegram_chat_id,
+            RelevantConcursoNotifier(
+                notifier=telegram_notifier,
+                terms=keyword_terms,
             )
         ]
 
@@ -220,6 +227,15 @@ def notify_existing_latest(
 
     if concurso is None:
         raise SystemExit("No hay concursos guardados en SQLite para notificar.")
+
+    keyword_terms = load_keyword_terms()
+    filter_result = match_concurso(concurso, keyword_terms)
+
+    if not filter_result.is_relevant:
+        raise SystemExit(
+            "El concurso mas reciente no coincide con el filtro de relevancia. "
+            "No se envio Telegram."
+        )
 
     notifier = TelegramNotifier(
         bot_token=config.telegram_bot_token,
