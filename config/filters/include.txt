@@ -16,6 +16,7 @@ equipo y herramienta de linea viva
 tensores
 cizalla
 cizallas
+herramienta diversa
 
 # Equipo de proteccion personal
 
@@ -53,6 +54,7 @@ equipo de puesta a tierra
 puesta a tierra temporal
 puesta a tierra subterranea
 equipo puesta a tierra para red subterranea
+material subterraneo
 
 # Deteccion de voltaje
 
@@ -93,6 +95,8 @@ voltamperimetros
 equipos de pruebas
 sensor infrarojo
 equipo de laboratorio
+equipo patron
+equipo de prueba
 
 # Controles prioritarios
 
