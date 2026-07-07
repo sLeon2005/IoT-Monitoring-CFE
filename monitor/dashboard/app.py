@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -17,6 +17,7 @@ from monitor.weather.open_meteo import get_configured_weather, weather_disabled_
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = (PACKAGE_DIR / "static").resolve()
+RELEVANT_VIEW_WINDOW_DAYS = 5
 
 
 class DashboardServer(ThreadingHTTPServer):
@@ -122,10 +123,38 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             "date",
             [datetime.now().strftime("%Y-%m-%d")],
         )[0]
-        rows = self.server.repository.list_by_publication_date(
-            fecha_publicacion=fecha_publicacion,
-            limit=limit,
-        )
+        publication_date = _parse_publication_date(fecha_publicacion)
+
+        if publication_date is None:
+            self.send_error(HTTPStatus.BAD_REQUEST, "Fecha no valida.")
+            return
+
+        start_date = publication_date
+        end_date = publication_date
+
+        if view == "relevant":
+            start_date = publication_date - timedelta(
+                days=RELEVANT_VIEW_WINDOW_DAYS - 1
+            )
+            rows = self.server.repository.list_by_publication_date_range(
+                start_date=start_date,
+                end_date=end_date,
+                limit=None,
+            )
+        else:
+            rows = self.server.repository.list_by_publication_date(
+                fecha_publicacion=fecha_publicacion,
+                limit=limit,
+            )
+
+        metric_rows = rows
+
+        if view == "relevant":
+            metric_rows = self.server.repository.list_by_publication_date(
+                fecha_publicacion=fecha_publicacion,
+                limit=None,
+            )
+
         total_count = len(rows)
         relevant_rows = [
             row
@@ -138,17 +167,33 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         filtered_rows = rows
 
         if view == "relevant":
-            filtered_rows = relevant_rows
+            filtered_rows = _limit_rows(relevant_rows, limit)
+
+        metric_relevant_rows = [
+            row
+            for row in metric_rows
+            if match_description(
+                row["descripcion"],
+                self.server.keyword_terms,
+            ).is_relevant
+        ]
 
         payload = {
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "fecha_publicacion": fecha_publicacion,
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat(),
+                "days": (end_date - start_date).days + 1,
+            },
             "view": view,
             "refresh_seconds": self.server.config.dashboard_refresh_seconds,
             "source_status": self.server.repository.get_monitor_status(),
             "count": len(filtered_rows),
             "total_count": total_count,
             "relevant_count": len(relevant_rows),
+            "metric_total_count": len(metric_rows),
+            "metric_relevant_count": len(metric_relevant_rows),
             "items": [_row_to_dict(row) for row in filtered_rows],
         }
         self._send_json(payload)
@@ -210,6 +255,20 @@ def _parse_limit(value: str) -> int:
         return 100
 
     return max(1, min(limit, 200))
+
+
+def _parse_publication_date(value: str) -> date | None:
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _limit_rows(rows: list, limit: int | None) -> list:
+    if limit is None:
+        return rows
+
+    return rows[:limit]
 
 
 def _content_type_for(path: str) -> str:

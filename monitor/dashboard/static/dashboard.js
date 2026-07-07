@@ -218,22 +218,32 @@ function render(payload) {
     : view === "relevant"
       ? items.length
       : 0;
+  const metricTotalCount = Number.isFinite(payload.metric_total_count)
+    ? payload.metric_total_count
+    : totalCount;
+  const metricRelevantCount = Number.isFinite(payload.metric_relevant_count)
+    ? payload.metric_relevant_count
+    : relevantCount;
   const isRelevantView = view === "relevant";
 
-  renderMetricCounts({ totalCount, relevantCount });
-  renderTableMode(view);
+  renderMetricCounts({
+    totalCount: metricTotalCount,
+    relevantCount: metricRelevantCount,
+  });
+  renderTableMode({ view, dateRange: payload.date_range });
   metricUpdated.textContent = formatDateTime(payload.generated_at);
 
   if (items.length === 0) {
+    const rangeDays = getDateRangeDays(payload.date_range);
     metricLast.textContent = "--";
     statusLabel.textContent = isRelevantView ? "Sin relevantes" : "Sin concursos";
     statusDetail.textContent = isRelevantView
-      ? `${totalCount} publicados en la fecha seleccionada`
+      ? `${totalCount} publicados en \u00faltimos ${rangeDays} d\u00edas`
       : `Sin publicaciones para ${payload.fecha_publicacion || "hoy"}`;
     statusDot.style.background = "var(--yellow)";
     body.innerHTML = `<tr><td colspan="5" class="empty">${escapeHtml(
       isRelevantView
-        ? "No hay concursos relevantes para esta fecha."
+        ? `No hay concursos relevantes en los \u00faltimos ${rangeDays} d\u00edas.`
         : "No hay concursos guardados.",
     )}</td></tr>`;
   } else {
@@ -241,20 +251,22 @@ function render(payload) {
     const latestDate = parseDate(latest.fecha_publicacion || latest.detectado_en);
     metricLast.textContent = latestDate ? formatDateTime(latestDate.toISOString()) : "--";
     updateActivityStatus(latestDate);
-    body.innerHTML = items.map(renderRow).join("");
+    body.innerHTML = renderRows(items, isRelevantView);
   }
 
   renderSourceStatus(payload.source_status);
 }
 
-function renderTableMode(view) {
+function renderTableMode({ view, dateRange }) {
   if (!tableMode) {
     return;
   }
 
+  const rangeDays = getDateRangeDays(dateRange);
+
   tableMode.textContent =
     view === "relevant"
-      ? "Mostrando concursos relevantes"
+      ? `Mostrando relevantes \u00faltimos ${rangeDays} d\u00edas`
       : "Mostrando todos los concursos";
 }
 
@@ -326,9 +338,37 @@ function buildEmptyRecentDays() {
   return days;
 }
 
-function renderRow(item) {
+function renderRows(items, useDayBands) {
+  let currentDateKey = null;
+  let currentBand = 0;
+
+  return items
+    .map((item) => {
+      if (!useDayBands) {
+        return renderRow(item);
+      }
+
+      const dateKey = getPublicationDateKey(item);
+
+      if (dateKey !== currentDateKey) {
+        currentDateKey = dateKey;
+        currentBand += 1;
+      }
+
+      const bandClass =
+        currentBand % 2 === 0
+          ? "publication-day-band-b"
+          : "publication-day-band-a";
+      return renderRow(item, bandClass);
+    })
+    .join("");
+}
+
+function renderRow(item, rowClass = "") {
+  const classAttribute = rowClass ? ` class="${escapeHtml(rowClass)}"` : "";
+
   return `
-    <tr>
+    <tr${classAttribute}>
       <td><strong>${escapeHtml(item.numero)}</strong></td>
       <td>${renderEntityBadge(item.entidad_federativa)}</td>
       <td>${escapeHtml(item.tipo_procedimiento)}</td>
@@ -336,6 +376,21 @@ function renderRow(item) {
       <td>${escapeHtml(item.descripcion)}</td>
     </tr>
   `;
+}
+
+function getPublicationDateKey(item) {
+  const rawDate = item.fecha_publicacion || item.detectado_en;
+  return String(rawDate || "").slice(0, 10) || "sin-fecha";
+}
+
+function getDateRangeDays(dateRange) {
+  const days = Number(dateRange?.days);
+
+  if (!Number.isFinite(days) || days < 1) {
+    return 1;
+  }
+
+  return Math.round(days);
 }
 
 function renderEntityBadge(value) {

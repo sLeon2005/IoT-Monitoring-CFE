@@ -157,6 +157,36 @@ class ConcursoRepository:
 
         return rows
 
+    def list_by_publication_date_range(
+        self,
+        start_date: date,
+        end_date: date,
+        limit: int | None = 100,
+    ) -> list[sqlite3.Row]:
+        query = """
+            SELECT *
+            FROM concursos
+            WHERE substr(fecha_publicacion, 1, 10) BETWEEN ? AND ?
+            ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
+            """
+        params: tuple[str, str] | tuple[str, str, int] = (
+            start_date.isoformat(),
+            end_date.isoformat(),
+        )
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params = (
+                start_date.isoformat(),
+                end_date.isoformat(),
+                limit,
+            )
+
+        with self._connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+
+        return rows
+
     def count_by_publication_date(
         self,
         start_date: date,

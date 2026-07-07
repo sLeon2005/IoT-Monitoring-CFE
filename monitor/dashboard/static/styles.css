@@ -3,6 +3,7 @@
   --bg: #071014;
   --panel: #0f1b21;
   --panel-strong: #14252d;
+  --row-band: #13232a;
   --line: #2a3a42;
   --text: #f2f7f8;
   --muted: #9fb1b8;
@@ -406,6 +407,10 @@ td:nth-child(5) {
 td:nth-child(5) {
   line-height: 1.45;
   max-width: 0;
+}
+
+tbody tr.publication-day-band-b {
+  background: var(--row-band);
 }
 
 .empty {
