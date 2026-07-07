@@ -1,30 +1,122 @@
-# Terminos iniciales para concursos relevantes al giro electrico.
-# Una palabra o frase por linea. Las lineas que empiezan con # se ignoran.
+# Herramienta menor y mayor
 
-control prioritario
-controles prioritarios
-aislado sobre aislado
 herramienta menor
-puesta a tierra
-trabajo en alturas
+herramienta mayor
+herramienta de uso personal
+herramienta especializada
+herramienta de distribucion
+herramienta mantenimiento mayor
+herramienta mantenimiento menor
+herramienta complementaria
+herramienta electrica
 equipo y herramienta
+equipo y herramienta de distribucion
+equipo y herramienta mantenimiento
+equipo y herramienta de linea viva
+tensores
+cizalla
+cizallas
+
+# Equipo de proteccion personal
+
+equipo de proteccion personal
 proteccion personal
+equipo de proteccion para trabajo en alturas
+equipo de proteccion para trabajos en alturas
+trabajo en alturas
+equipo de proteccion y de emergencia
+material dielectrico
+traje conductor
+polea aislada
+guantes clase 2
+equipo de aislado
+lineas de vida
+
+# Linea viva
+
+linea viva
+equipo de linea viva
+laboratorio de linea viva
+maquina probadora de equipo de linea viva
+pertiga
+pertigas
+pertiga cuatro secciones
+guantes dielectricos
+rompecargas
+aislado sobre aislado
+escaleras
+
+# Puesta a tierra
+
+puesta a tierra
+equipo de puesta a tierra
+puesta a tierra temporal
+puesta a tierra subterranea
+equipo puesta a tierra para red subterranea
+
+# Deteccion de voltaje
+
 detector
 detectores
 detector de voltaje
+detector de voltaje personal
+detector de voltaje para casco
+
+# Pinzas y herramientas de compresion
+
+pinza de compresion mecanica
+pinzas electricas de compresion
+pinzas de compresion
+compresion hidraulica
+pinzas mcm
+pinzas y desarmadores
+pinzas pistola
+pinzas recta
+cortadoras
+escalera de extension de fibra de vidrio
+
+# Medicion y calibracion
+
+patron trifasico
+patron monofasico
+sistema de calibracion
+sistema de calibracion para medidores
+sistema de calibracion de patrones
+sistema portatil de alta precision para prueba
+analizador trifasico
+probador de resistencia al aislamiento
+probador de polaridad
+equipo de medicion portatil
+multimetro
 voltamperimetro
 voltamperimetros
 equipos de pruebas
-pertiga
-pertigas
-traje conductor
-rompecargas
-pinzas de compresion
-compresion hidraulica
-lineas de vida
-tensores
-escaleras
-herramienta electrica
-cizalla
-cizallas
+sensor infrarojo
+equipo de laboratorio
+
+# Controles prioritarios
+
+equipo de controles prioritarios
+control prioritario
+controles prioritarios
+
+# Obra civil e inspeccion
+
+camara de inspeccion de tuberia
+camara de inspeccion de alcantarillado
+inspeccion de drenaje
+
+# Iluminacion
+
+faro buscador spot
+lampara led recargable para casco
+
+# Cables y accesorios
+
+cable y accesorios
 cables y accesorios
+instalacion de cable
+
+# Seguridad industrial
+
+equipo de seguridad
