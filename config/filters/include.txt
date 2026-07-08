@@ -36,7 +36,8 @@ equipo de proteccion y de emergencia
 material dielectrico
 traje conductor
 polea aislada
-guantes clase 2
+guantes clase
+guante clase
 equipo de aislado
 lineas de vida
 guantes anticorte
