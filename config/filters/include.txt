@@ -17,6 +17,7 @@ tensores
 cizalla
 cizallas
 herramienta diversa
+motosierras
 
 # Equipo de proteccion personal
 
@@ -39,13 +40,20 @@ linea viva
 equipo de linea viva
 laboratorio de linea viva
 maquina probadora de equipo de linea viva
+mantenimiento de maquinas de laboratorio
+mantenimiento maquinas de laboratorio
+maquinas de laboratorio
 pertiga
 pertigas
 pertiga cuatro secciones
 guantes dielectricos
 rompecargas
-aislado sobre aislado
+loadbuster
+abridor
+abridores
 escaleras
+laboratorio de linea viva
+laboratorio de pruebas equipo lv
 
 # Puesta a tierra
 
@@ -63,6 +71,7 @@ detectores
 detector de voltaje
 detector de voltaje personal
 detector de voltaje para casco
+detectores para casco
 
 # Pinzas y herramientas de compresion
 
@@ -93,16 +102,25 @@ multimetro
 voltamperimetro
 voltamperimetros
 equipos de pruebas
+sensor infrarrojo
 sensor infrarojo
 equipo de laboratorio
 equipo patron
 equipo de prueba
+mesa de calibracion
+mantenimiento y calibracion de maquinas de laboratorio de pruebas electricas
+amperimetro
+probador
+patron
 
 # Controles prioritarios
 
 equipo de controles prioritarios
 control prioritario
 controles prioritarios
+acciones que salvan vidas
+accion que salva vidas
+aislado sobre aislado
 
 # Obra civil e inspeccion
 
@@ -114,6 +132,9 @@ inspeccion de drenaje
 
 faro buscador spot
 lampara led recargable para casco
+torre de iluminacion
+torres de iluminacion
+torres de iluminacion
 
 # Cables y accesorios
 
@@ -124,3 +145,18 @@ instalacion de cable
 # Seguridad industrial
 
 equipo de seguridad
+topes de hule para vehiculos
+
+# Montacargas
+
+montacargas
+
+# Tarjetas de escalamiento
+
+tarjeta de escalamiento
+tarjetas de escalamiento
+
+# Transformadores
+
+transformador
+transformadores
