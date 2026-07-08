@@ -27,6 +27,51 @@ monitor/
 
 ```
 
+## Desarrollo local
+
+Requisitos recomendados:
+
+- Python 3.10 o superior.
+- PowerShell en Windows o una terminal compatible en Linux/Raspberry Pi.
+- Chromium via Playwright solo si se usara bootstrap de sesion CFE por navegador.
+
+Crear entorno e instalar dependencias:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+En Linux/Raspberry Pi:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Si se usara bootstrap con navegador:
+
+```powershell
+python -m playwright install chromium
+```
+
+Diagnosticar el entorno sin consultar CFE ni enviar Telegram:
+
+```powershell
+python -m tools.diagnose_environment
+```
+
+Verificaciones rapidas antes de entregar cambios:
+
+```powershell
+python -m unittest discover
+python -m compileall cfe_api monitor tools tests
+```
+
 ## Configuracion
 
 Copia `.env.example` a `.env` y ajusta los valores necesarios:
@@ -135,10 +180,10 @@ Estos valores no deben versionarse.
 La opcion automatizada usa Chromium mediante Playwright para abrir el portal, esperar el
 input oculto, extraer cookies y guardar una sesion local en `data/cfe_session.json`.
 
-Instala dependencias:
+Instala dependencias y Chromium:
 
 ```powershell
-pip install playwright
+python -m pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
@@ -240,11 +285,20 @@ python -m tools.resolve_cfe_event_names --input-file data/eventos.txt --format c
 La herramienta usa la misma sesion CFE configurada para el monitor: primero `.env`,
 luego `data/cfe_session.json` y, si esta habilitado, bootstrap con Chromium.
 
+Diagnosticar entorno local:
+
+```powershell
+python -m tools.diagnose_environment
+```
+
 ## Notas de arquitectura
 
 - `cfe_api` no conoce Telegram, SQLite, dashboard, GPIO ni Raspberry Pi.
 - `monitor` no conoce el protocolo HTTP interno de CFE.
 - El formato JSON de CFE se encapsula en `Concurso.from_dict()`.
+- Las respuestas del endpoint de concursos se validan antes de convertirse a modelos:
+  HTML, bloqueos WAF, JSON invalido o estructuras inesperadas se convierten en errores
+  esperados de la SDK.
 - El codigo de aplicacion no debe leer campos como `item["Numero"]` directamente.
 - Las notificaciones relevantes se persisten en SQLite antes de enviarse para evitar
   perdidas por fallos temporales de Telegram o red.

@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from cfe_api.core.errors import CFEAPIError, CFEBlockedError
+from cfe_api.core.utils import looks_like_waf_block, response_snippet
 
 
 class CFESession:
@@ -112,24 +113,17 @@ class CFESession:
         try:
             response.raise_for_status()
         except requests.HTTPError as exc:
-            snippet = " ".join(response.text[:300].split())
+            snippet = response_snippet(response.text)
             message = (
                 f"No fue posible {context}. "
                 f"HTTP {response.status_code}. Respuesta: {snippet}"
             )
 
-            if response.status_code == 403 or _looks_like_waf_block(response.text):
+            if response.status_code == 403 or looks_like_waf_block(response.text):
                 raise CFEBlockedError(message) from exc
 
             raise CFEAPIError(message) from exc
 
 
 def _looks_like_waf_block(body: str) -> bool:
-    markers = (
-        "NOINDEX, NOFOLLOW",
-        "incap_ses",
-        "visid_incap",
-        "_Incapsula_Resource",
-    )
-
-    return any(marker in body for marker in markers)
+    return looks_like_waf_block(body)

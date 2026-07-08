@@ -65,6 +65,8 @@ monitor/
     static/              HTML/CSS/JS e iconos
   notifications/
     base.py              contrato comun de notificadores
+    dispatcher.py        despacha notificaciones pendientes desde SQLite
+    outbox.py            encola notificaciones relevantes antes de enviarlas
     relevant.py          decorador que solo notifica concursos relevantes
     telegram.py          notificador Telegram y CLI de prueba
   weather/
@@ -75,6 +77,9 @@ monitor/
 config/
   filters/
     include.txt          terminos para concursos relevantes
+
+tools/
+  diagnose_environment.py diagnostico local sin consultar CFE ni Telegram
 
 ```
 
@@ -94,7 +99,7 @@ CFE_COOKIE_HEADER=
 CFE_REQUEST_VERIFICATION_TOKEN=
 CFE_SESSION_CACHE_PATH=data/cfe_session.json
 CFE_BROWSER_PROFILE_DIR=data/browser-profile
-CFE_BROWSER_BOOTSTRAP_ENABLED=true
+CFE_BROWSER_BOOTSTRAP_ENABLED=false
 CFE_BROWSER_HEADLESS=false
 CFE_BROWSER_TIMEOUT_MS=60000
 DASHBOARD_HOST=127.0.0.1
@@ -118,6 +123,30 @@ Notas:
 - `config/filters/include.txt` se versiona porque define el giro relevante del proyecto; no debe contener secretos.
 
 ## Comandos Utiles
+
+Instalar dependencias:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Instalar Chromium para bootstrap por navegador:
+
+```powershell
+python -m playwright install chromium
+```
+
+Diagnosticar entorno local sin consultar CFE ni enviar Telegram:
+
+```powershell
+python -m tools.diagnose_environment
+```
+
+Ejecutar pruebas unitarias:
+
+```powershell
+python -m unittest discover
+```
 
 Compilar/verificar imports:
 
@@ -259,7 +288,9 @@ Reglas:
 - Token y chat ID siempre desde `.env`.
 - `send_new_concurso(concurso)` debe recibir un objeto `Concurso`, no diccionarios crudos.
 - Las notificaciones automaticas del monitor deben pasar por `RelevantConcursoNotifier`.
-- `RelevantConcursoNotifier` solo debe decidir relevancia y delegar el envio real.
+- `RelevantConcursoNotifier` solo debe decidir relevancia y delegar el envio.
+- Las notificaciones relevantes deben persistirse en `notification_outbox` antes de enviarse.
+- El envio real de pendientes debe pasar por `NotificationDispatcher`.
 - `python -m monitor.notifications.telegram --test` debe seguir funcionando como prueba rapida.
 - `python -m monitor.main --notify-existing-latest` debe servir para probar formato con datos reales ya guardados y tambien respetar relevancia.
 - No enviar Telegram para concursos no relevantes salvo que el usuario lo pida explicitamente.
@@ -313,7 +344,7 @@ Reglas:
 - Usar `apply_patch` para ediciones manuales.
 - No borrar ni revertir cambios del usuario.
 - No hacer commits salvo que el usuario lo pida explicitamente.
-- Antes de cerrar cambios de codigo, correr `python -m compileall cfe_api monitor`.
+- Antes de cerrar cambios de codigo, correr `python -m unittest discover` y `python -m compileall cfe_api monitor tools tests`.
 
 ## Futuro Cercano
 
