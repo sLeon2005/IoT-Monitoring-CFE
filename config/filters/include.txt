@@ -18,6 +18,11 @@ cizalla
 cizallas
 herramienta diversa
 motosierras
+equipo operativo
+sogas
+suministro de podadoras
+podadoras
+podadora
 
 # Equipo de proteccion personal
 
@@ -33,6 +38,8 @@ polea aislada
 guantes clase 2
 equipo de aislado
 lineas de vida
+guantes anticorte
+equipo y herramienta para trabajos en alturas
 
 # Linea viva
 
@@ -54,6 +61,14 @@ abridores
 escaleras
 laboratorio de linea viva
 laboratorio de pruebas equipo lv
+pertigas para subestaciones
+pertiga cortadora
+pertiga triangular telescopica 7 secciones
+maquinas para pruebas de equipo de lv
+material y equipo de linea viva
+pertigas telescopicas y sierras hidraulicas para canastilla
+sierras hidraulicas para canastilla
+pertigas telescopicas
 
 # Puesta a tierra
 
@@ -85,6 +100,7 @@ pinzas pistola
 pinzas recta
 cortadoras
 escalera de extension de fibra de vidrio
+pinzas para baja tension
 
 # Medicion y calibracion
 
@@ -141,6 +157,7 @@ torres de iluminacion
 cable y accesorios
 cables y accesorios
 instalacion de cable
+cable polipropileno
 
 # Seguridad industrial
 
