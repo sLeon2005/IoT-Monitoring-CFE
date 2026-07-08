@@ -10,6 +10,10 @@ from cfe_api.models.concurso import Concurso
 from monitor.config import load_env_file
 
 
+class TelegramNotificationError(RuntimeError):
+    """Error esperado al enviar mensajes por Telegram."""
+
+
 class TelegramNotifier:
     def __init__(self, bot_token: str | None = None, chat_id: str | None = None):
         self.bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN")
@@ -32,12 +36,15 @@ class TelegramNotifier:
         if parse_mode is not None:
             payload["parse_mode"] = parse_mode
 
-        response = requests.post(
-            url,
-            json=payload,
-            timeout=30,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                timeout=30,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise TelegramNotificationError(_format_telegram_error(exc)) from exc
 
     def send_new_concurso(self, concurso: Concurso) -> None:
         self.send(format_new_concurso_message(concurso), parse_mode="HTML")
@@ -66,6 +73,20 @@ def format_new_concurso_message(concurso: Concurso) -> str:
             "<b>Descripción:</b>",
             html.escape(concurso.descripcion),
         ]
+    )
+
+
+def _format_telegram_error(exc: requests.RequestException) -> str:
+    response = exc.response
+
+    if response is None:
+        return "No fue posible enviar mensaje Telegram."
+
+    snippet = " ".join(response.text[:300].split())
+
+    return (
+        "No fue posible enviar mensaje Telegram. "
+        f"HTTP {response.status_code}. Respuesta: {snippet}"
     )
 
 

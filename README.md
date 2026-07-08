@@ -104,6 +104,9 @@ python -m monitor.main
 ```
 
 El monitor consulta CFE, guarda concursos en SQLite y solo emite eventos para concursos nuevos.
+Las notificaciones automaticas no se envian directamente desde la deteccion: primero se
+guardan en `notification_outbox` y despues se despachan por Telegram. Si Telegram o la red
+fallan, la notificacion queda pendiente y se reintenta en ciclos posteriores con backoff.
 
 Probar la notificacion de concurso usando el registro mas reciente ya guardado en SQLite:
 
@@ -243,3 +246,5 @@ luego `data/cfe_session.json` y, si esta habilitado, bootstrap con Chromium.
 - `monitor` no conoce el protocolo HTTP interno de CFE.
 - El formato JSON de CFE se encapsula en `Concurso.from_dict()`.
 - El codigo de aplicacion no debe leer campos como `item["Numero"]` directamente.
+- Las notificaciones relevantes se persisten en SQLite antes de enviarse para evitar
+  perdidas por fallos temporales de Telegram o red.

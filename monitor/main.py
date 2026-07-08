@@ -11,6 +11,11 @@ from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
 from monitor.filtering import load_keyword_terms, match_concurso
 from monitor.monitor import CFEMonitor
+from monitor.notifications.dispatcher import (
+    NotificationDispatcher,
+    NotificationDispatchResult,
+)
+from monitor.notifications.outbox import OutboxConcursoNotifier
 from monitor.notifications.relevant import RelevantConcursoNotifier
 from monitor.notifications.telegram import TelegramNotifier
 
@@ -18,22 +23,44 @@ from monitor.notifications.telegram import TelegramNotifier
 logger = logging.getLogger(__name__)
 
 
-def build_notifiers(config: MonitorConfig):
+def build_notifiers(
+    config: MonitorConfig,
+    repository: ConcursoRepository,
+):
     if config.telegram_enabled:
         keyword_terms = load_keyword_terms()
-        telegram_notifier = TelegramNotifier(
-            bot_token=config.telegram_bot_token,
-            chat_id=config.telegram_chat_id,
+        outbox_notifier = OutboxConcursoNotifier(
+            repository=repository,
+            channel="telegram",
         )
         return [
             RelevantConcursoNotifier(
-                notifier=telegram_notifier,
+                notifier=outbox_notifier,
                 terms=keyword_terms,
             )
         ]
 
     logger.info("Telegram deshabilitado: faltan credenciales.")
     return []
+
+
+def build_notification_dispatcher(
+    config: MonitorConfig,
+    repository: ConcursoRepository,
+) -> NotificationDispatcher | None:
+    if not config.telegram_enabled:
+        return None
+
+    telegram_notifier = TelegramNotifier(
+        bot_token=config.telegram_bot_token,
+        chat_id=config.telegram_chat_id,
+    )
+
+    return NotificationDispatcher(
+        repository=repository,
+        notifier=telegram_notifier,
+        channel="telegram",
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,15 +120,18 @@ def main() -> None:
         notify_existing_latest(repository, config)
         return
 
+    notification_dispatcher = build_notification_dispatcher(config, repository)
     retried_with_browser_session = False
 
     while True:
+        pre_poll_dispatch = dispatch_pending_notifications(notification_dispatcher)
+
         if monitor is None:
             try:
                 cfe_session_data = resolve_cfe_session_data(config)
                 monitor = CFEMonitor.create(
                     db_path=config.db_path,
-                    notifiers=build_notifiers(config),
+                    notifiers=build_notifiers(config, repository),
                     cfe_cookie_header=(
                         cfe_session_data.cookie_header
                         if cfe_session_data is not None
@@ -161,11 +191,14 @@ def main() -> None:
 
         try:
             eventos = monitor.poll(fecha_publicacion=args.fecha_publicacion)
-            logger.info("Ciclo completado. Eventos emitidos: %s", len(eventos))
+            post_poll_dispatch = dispatch_pending_notifications(notification_dispatcher)
+            dispatch_result = post_poll_dispatch or pre_poll_dispatch
+            status_message = _cycle_status_message(len(eventos), dispatch_result)
+            logger.info(status_message)
             retried_with_browser_session = False
             repository.set_monitor_status(
                 "ok",
-                f"Ciclo completado. Eventos emitidos: {len(eventos)}.",
+                status_message,
             )
         except CFEBlockedError as exc:
             logger.warning("CFE bloqueo la consulta HTTP: %s", exc)
@@ -211,6 +244,54 @@ def _can_retry_with_browser_session(
         config.cfe_browser_bootstrap_enabled
         and not retry_used
         and not has_manual_session
+    )
+
+
+def dispatch_pending_notifications(
+    dispatcher: NotificationDispatcher | None,
+) -> NotificationDispatchResult | None:
+    if dispatcher is None:
+        return None
+
+    try:
+        result = dispatcher.dispatch_due()
+    except Exception:
+        logger.exception("Error despachando notificaciones pendientes.")
+        return None
+
+    if result.attempted > 0:
+        logger.info(
+            "Notificaciones Telegram procesadas: %s enviadas, %s fallidas, "
+            "%s pendientes.",
+            result.sent,
+            result.failed,
+            result.pending,
+        )
+
+    return result
+
+
+def _cycle_status_message(
+    event_count: int,
+    dispatch_result: NotificationDispatchResult | None,
+) -> str:
+    message = f"Ciclo completado. Eventos emitidos: {event_count}."
+
+    if dispatch_result is None:
+        return message
+
+    if (
+        dispatch_result.attempted == 0
+        and dispatch_result.pending == 0
+        and dispatch_result.permanently_failed == 0
+    ):
+        return message
+
+    return (
+        f"{message} Telegram: {dispatch_result.sent} enviadas, "
+        f"{dispatch_result.failed} fallidas, "
+        f"{dispatch_result.pending} pendientes, "
+        f"{dispatch_result.permanently_failed} fallidas permanentes."
     )
 
 
