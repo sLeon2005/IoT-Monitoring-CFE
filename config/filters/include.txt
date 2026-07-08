@@ -24,6 +24,9 @@ suministro de podadoras
 podadoras
 podadora
 astilladora
+reconectador
+reconectadores
+reconectador monofasico
 
 # Equipo de proteccion personal
 
@@ -42,6 +45,9 @@ equipo de aislado
 lineas de vida
 guantes anticorte
 equipo y herramienta para trabajos en alturas
+anticaidas
+andamio dielectrico
+andamios dielectricos
 
 # Linea viva
 
@@ -95,7 +101,12 @@ detectores para casco
 pinza de compresion mecanica
 pinzas electricas de compresion
 pinzas de compresion
+pinza electrohidraulica
+pinzas electrohidraulicas
+pinzas de potencia
 compresion hidraulica
+cabezal de compresion
+cabezales de compresion
 pinzas mcm
 pinzas y desarmadores
 pinzas pistola
@@ -106,19 +117,27 @@ pinzas para baja tension
 
 # Medicion y calibracion
 
+equipos de prueba
+equipos de prueba de emision acustica
+emision acustica
 patron trifasico
 patron monofasico
 sistema de calibracion
+sistema automatizado para calibracion
 sistema de calibracion para medidores
 sistema de calibracion de patrones
 sistema portatil de alta precision para prueba
 analizador trifasico
 probador de resistencia al aislamiento
 probador de polaridad
+relacion de transformacion
+equipo de calibracion portatil
 equipo de medicion portatil
 multimetro
 voltamperimetro
 voltamperimetros
+watthorimetro
+watthorimetros
 equipos de pruebas
 sensor infrarrojo
 sensor infrarojo
@@ -131,6 +150,21 @@ amperimetro
 probador
 patron
 calibrador de prueba
+termohigrometro
+termohigrometros
+
+# Termografia
+
+termografia
+camara termografica
+camaras termograficas
+
+# Profauna
+
+profauna
+repelente para perros
+ahuyentador de perros
+baston retractil ahuyenta perros
 
 # Controles prioritarios
 
@@ -162,6 +196,9 @@ cable y accesorios
 cables y accesorios
 instalacion de cable
 cable polipropileno
+maniobras e izaje
+tendido de conductor
+fibra optica
 
 # Seguridad industrial
 
