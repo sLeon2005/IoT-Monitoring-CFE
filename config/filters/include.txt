@@ -23,6 +23,7 @@ sogas
 suministro de podadoras
 podadoras
 podadora
+astilladora
 
 # Equipo de proteccion personal
 
@@ -128,6 +129,7 @@ mantenimiento y calibracion de maquinas de laboratorio de pruebas electricas
 amperimetro
 probador
 patron
+calibrador de prueba
 
 # Controles prioritarios
 
@@ -151,6 +153,7 @@ lampara led recargable para casco
 torre de iluminacion
 torres de iluminacion
 torres de iluminacion
+lamparas para subestaciones
 
 # Cables y accesorios
 
