@@ -31,11 +31,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-body.cursor-hidden,
-body.cursor-hidden * {
-  cursor: none;
-}
-
 .screen {
   --screen-padding: 28px;
 

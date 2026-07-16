@@ -204,7 +204,6 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             {
                 "view": current_view,
                 "available_views": list(AVAILABLE_VIEWS),
-                "cursor_idle_seconds": self.server.config.dashboard_cursor_idle_seconds,
             }
         )
 

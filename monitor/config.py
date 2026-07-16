@@ -22,7 +22,6 @@ class MonitorConfig:
     dashboard_host: str
     dashboard_port: int
     dashboard_refresh_seconds: int
-    dashboard_cursor_idle_seconds: int
     weather_enabled: bool
     weather_location_name: str
     weather_latitude: float
@@ -57,10 +56,6 @@ class MonitorConfig:
             dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
             dashboard_port=_get_int("DASHBOARD_PORT", 8000),
             dashboard_refresh_seconds=_get_int("DASHBOARD_REFRESH_SECONDS", 30),
-            dashboard_cursor_idle_seconds=_get_int(
-                "DASHBOARD_CURSOR_IDLE_SECONDS",
-                0,
-            ),
             weather_enabled=_get_bool("WEATHER_ENABLED", True),
             weather_location_name=os.getenv("WEATHER_LOCATION_NAME", "Tampico"),
             weather_latitude=_get_float("WEATHER_LATITUDE", 22.2372),
