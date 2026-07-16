@@ -27,6 +27,8 @@ const placeholderWeather = {
 let refreshSeconds = 30;
 let weatherRefreshSeconds = 900;
 let dashboardView = "all";
+let cursorIdleConfigured = false;
+let cursorIdleTimer = null;
 const selectedDate = getSelectedDate();
 const selectedView = getSelectedView();
 
@@ -79,7 +81,9 @@ const ENTITY_DISPLAY_NAMES = {
 
 async function loadConcursos() {
   try {
-    dashboardView = selectedView || (await loadDashboardState());
+    const dashboardState = await loadDashboardState();
+    dashboardView = selectedView || dashboardState.view;
+    configureCursorIdle(dashboardState.cursorIdleSeconds);
     const params = new URLSearchParams({ limit: "100" });
 
     if (selectedDate) {
@@ -201,12 +205,44 @@ async function loadDashboardState() {
   }
 
   const payload = await response.json();
+  const view = payload.view === "relevant" || payload.view === "all"
+    ? payload.view
+    : "all";
+  const cursorIdleSeconds = Number(payload.cursor_idle_seconds);
 
-  if (payload.view === "relevant" || payload.view === "all") {
-    return payload.view;
+  return {
+    view,
+    cursorIdleSeconds: Number.isFinite(cursorIdleSeconds)
+      ? Math.max(0, Math.floor(cursorIdleSeconds))
+      : 0,
+  };
+}
+
+function configureCursorIdle(idleSeconds) {
+  if (cursorIdleConfigured || idleSeconds <= 0) {
+    return;
   }
 
-  return "all";
+  cursorIdleConfigured = true;
+  const resetCursorIdle = () => {
+    document.body.classList.remove("cursor-hidden");
+
+    if (cursorIdleTimer !== null) {
+      window.clearTimeout(cursorIdleTimer);
+    }
+
+    cursorIdleTimer = window.setTimeout(() => {
+      document.body.classList.add("cursor-hidden");
+    }, idleSeconds * 1000);
+  };
+
+  ["mousemove", "mousedown", "keydown", "touchstart", "pointermove"].forEach(
+    (eventName) => {
+      window.addEventListener(eventName, resetCursorIdle, { passive: true });
+    },
+  );
+
+  resetCursorIdle();
 }
 
 function render(payload) {
