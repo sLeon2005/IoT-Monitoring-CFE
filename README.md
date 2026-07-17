@@ -92,6 +92,7 @@ CFE_BROWSER_TIMEOUT_MS=60000
 DASHBOARD_HOST=127.0.0.1
 DASHBOARD_PORT=8000
 DASHBOARD_REFRESH_SECONDS=120
+FILTER_ADMIN_PASSWORD=
 WEATHER_ENABLED=true
 WEATHER_LOCATION_NAME=Tampico
 WEATHER_LATITUDE=22.2372
@@ -224,6 +225,23 @@ http://127.0.0.1:8000
 ```
 
 En Raspberry Pi se puede abrir esa URL con Chromium en modo kiosk para mostrarla por HDMI.
+
+Para administrar la lista de terminos relevantes desde otro equipo de la misma red,
+configura el dashboard para escuchar en la red local y define una contrasena:
+
+```env
+DASHBOARD_HOST=0.0.0.0
+FILTER_ADMIN_PASSWORD=elige_una_contrasena
+```
+
+Luego abre desde una laptop o celular:
+
+```text
+http://IP-DE-LA-RASPBERRY:8000/admin/filtros
+```
+
+El panel edita `config/filters/include.txt`. Las lineas que empiezan con `#` se
+mantienen como secciones, y los terminos se recargan sin reiniciar el dashboard.
 
 El dashboard consulta clima actual mediante Open-Meteo y usa placeholder si la API falla.
 La tabla de pantalla muestra solo datos operativos: numero, entidad, estado, tipo,

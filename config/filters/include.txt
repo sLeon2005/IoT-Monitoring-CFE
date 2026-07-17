@@ -67,7 +67,6 @@ loadbuster
 abridor
 abridores
 escaleras
-laboratorio de linea viva
 laboratorio de pruebas equipo lv
 pertigas para subestaciones
 pertiga cortadora
@@ -186,7 +185,6 @@ inspeccion de drenaje
 faro buscador spot
 lampara led recargable para casco
 torre de iluminacion
-torres de iluminacion
 torres de iluminacion
 lamparas para subestaciones
 

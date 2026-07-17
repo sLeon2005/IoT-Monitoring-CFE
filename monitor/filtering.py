@@ -52,6 +52,35 @@ def load_keyword_terms(path: str | Path = DEFAULT_INCLUDE_KEYWORDS_PATH) -> tupl
     return tuple(terms)
 
 
+class KeywordTermStore:
+    """Carga terminos y los refresca cuando cambia el archivo."""
+
+    def __init__(self, path: str | Path = DEFAULT_INCLUDE_KEYWORDS_PATH):
+        self.path = Path(path)
+        self._mtime_ns: int | None = None
+        self._terms: tuple[KeywordTerm, ...] = ()
+
+    def get_terms(self) -> tuple[KeywordTerm, ...]:
+        current_mtime = self._get_mtime_ns()
+
+        if current_mtime != self._mtime_ns:
+            self._terms = load_keyword_terms(self.path)
+            self._mtime_ns = current_mtime
+
+        return self._terms
+
+    def refresh(self) -> tuple[KeywordTerm, ...]:
+        self._terms = load_keyword_terms(self.path)
+        self._mtime_ns = self._get_mtime_ns()
+        return self._terms
+
+    def _get_mtime_ns(self) -> int | None:
+        try:
+            return self.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            return None
+
+
 def match_description(
     description: str,
     terms: tuple[KeywordTerm, ...],

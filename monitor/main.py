@@ -9,7 +9,7 @@ from cfe_api.core.errors import CFEAPIError, CFEBlockedError
 from monitor.cfe_session import invalidate_cached_cfe_session, resolve_cfe_session_data
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
-from monitor.filtering import load_keyword_terms, match_concurso
+from monitor.filtering import KeywordTermStore, load_keyword_terms, match_concurso
 from monitor.monitor import CFEMonitor
 from monitor.notifications.dispatcher import (
     NotificationDispatcher,
@@ -18,6 +18,7 @@ from monitor.notifications.dispatcher import (
 from monitor.notifications.outbox import OutboxConcursoNotifier
 from monitor.notifications.relevant import RelevantConcursoNotifier
 from monitor.notifications.telegram import TelegramNotifier
+from monitor.polling import build_poll_dates
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def build_notifiers(
             RelevantConcursoNotifier(
                 notifier=outbox_notifier,
                 terms=keyword_terms,
+                term_store=KeywordTermStore(),
             )
         ]
 
@@ -190,10 +192,22 @@ def main() -> None:
                 continue
 
         try:
-            eventos = monitor.poll(fecha_publicacion=args.fecha_publicacion)
+            poll_dates = build_poll_dates(
+                args.fecha_publicacion,
+                once=args.once,
+            )
+            eventos = []
+
+            for poll_date in poll_dates:
+                eventos.extend(monitor.poll(fecha_publicacion=poll_date))
+
             post_poll_dispatch = dispatch_pending_notifications(notification_dispatcher)
             dispatch_result = post_poll_dispatch or pre_poll_dispatch
-            status_message = _cycle_status_message(len(eventos), dispatch_result)
+            status_message = _cycle_status_message(
+                len(eventos),
+                dispatch_result,
+                poll_dates=poll_dates,
+            )
             logger.info(status_message)
             retried_with_browser_session = False
             repository.set_monitor_status(
@@ -274,8 +288,12 @@ def dispatch_pending_notifications(
 def _cycle_status_message(
     event_count: int,
     dispatch_result: NotificationDispatchResult | None,
+    poll_dates: list[str] | None = None,
 ) -> str:
     message = f"Ciclo completado. Eventos emitidos: {event_count}."
+
+    if poll_dates:
+        message = f"{message} Fechas consultadas: {', '.join(poll_dates)}."
 
     if dispatch_result is None:
         return message

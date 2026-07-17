@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Filtros de relevancia</title>
+    <link rel="stylesheet" href="/static/admin_filters.css">
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">CFE Monitor</p>
+          <h1>Filtros de relevancia</h1>
+        </div>
+      </header>
+
+      <section class="auth-panel" id="auth-panel" hidden>
+        <div class="auth-card">
+          <h2>Acceso</h2>
+          <label for="admin-password">Contraseña</label>
+          <div class="auth-row">
+            <input
+              id="admin-password"
+              name="admin-password"
+              type="password"
+              autocomplete="current-password"
+            >
+            <button type="button" id="unlock-button">Entrar</button>
+          </div>
+        </div>
+        <div class="auth-card auth-help">
+          <h2>Uso rápido</h2>
+          <ul>
+            <li>Cada sección tiene un cuadro editable; para agregar un término, haz clic dentro del cuadro y escríbelo en una línea nueva.</li>
+            <li>Para quitar un término, borra su línea del cuadro.</li>
+            <li>Los términos se guardan en minúsculas, sin acentos ni signos.</li>
+            <li>Usa secciones para mantener la lista ordenada por tema.</li>
+            <li>Presiona Guardar cambios para aplicar los filtros nuevos.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div>
+          <strong id="summary">Cargando filtros...</strong>
+          <span id="save-state">Sin cambios pendientes</span>
+        </div>
+        <div class="toolbar-actions">
+          <button type="button" id="add-section-button">Nueva sección</button>
+          <button type="button" id="save-button">Guardar cambios</button>
+        </div>
+      </section>
+
+      <section class="editor" id="sections-editor" aria-live="polite"></section>
+    </main>
+
+    <template id="section-template">
+      <article class="filter-section">
+        <div class="section-heading">
+          <label>
+            Sección
+            <input class="section-name" type="text" maxlength="80">
+          </label>
+          <button type="button" class="remove-section">Eliminar sección</button>
+        </div>
+        <label>
+          Términos
+          <textarea class="section-terms" rows="8" spellcheck="false"></textarea>
+        </label>
+      </article>
+    </template>
+
+    <script src="/static/admin_filters.js"></script>
+  </body>
+</html>

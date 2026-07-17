@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,7 +11,13 @@ from urllib.parse import parse_qs, urlparse
 from monitor.config import MonitorConfig, load_env_file
 from monitor.database.repository import ConcursoRepository
 from monitor.dashboard.state import AVAILABLE_VIEWS, DashboardState, is_valid_view
-from monitor.filtering import load_keyword_terms, match_description
+from monitor.filter_catalog import (
+    load_filter_sections,
+    save_filter_sections,
+    sections_from_payload,
+    sections_to_payload,
+)
+from monitor.filtering import KeywordTermStore, match_description
 from monitor.system.network import get_wifi_status
 from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
 
@@ -27,7 +34,7 @@ class DashboardServer(ThreadingHTTPServer):
         self.repository = ConcursoRepository(config.db_path)
         self.repository.initialize()
         self.dashboard_state = DashboardState()
-        self.keyword_terms = load_keyword_terms()
+        self.keyword_terms = KeywordTermStore()
 
 
 class DashboardRequestHandler(BaseHTTPRequestHandler):
@@ -40,10 +47,26 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             self._send_static_file("index.html", "text/html; charset=utf-8")
             return
 
+        if parsed_url.path == "/admin/filtros":
+            self._send_static_file("admin_filters.html", "text/html; charset=utf-8")
+            return
+
         if parsed_url.path.startswith("/static/"):
             self._send_static_file(
                 parsed_url.path.removeprefix("/static/"),
                 _content_type_for(parsed_url.path),
+            )
+            return
+
+        if parsed_url.path == "/api/admin/filters":
+            self._send_filter_sections()
+            return
+
+        if parsed_url.path == "/api/admin/filters/status":
+            self._send_json(
+                {
+                    "auth_required": bool(self.server.config.filter_admin_password),
+                }
             )
             return
 
@@ -77,6 +100,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             self._send_dashboard_state(view=view)
             return
 
+        if parsed_url.path == "/api/admin/filters":
+            self._save_filter_sections()
+            return
+
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def log_message(self, format: str, *args) -> None:
@@ -100,15 +127,105 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
-    def _send_json(self, payload: dict) -> None:
+    def _send_json(
+        self,
+        payload: dict,
+        status: HTTPStatus = HTTPStatus.OK,
+    ) -> None:
         content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
 
-        self.send_response(HTTPStatus.OK)
+        self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(content)))
         self.end_headers()
         self.wfile.write(content)
+
+    def _send_json_error(self, status: HTTPStatus, message: str) -> None:
+        self._send_json({"error": message}, status=status)
+
+    def _send_filter_sections(self) -> None:
+        if not self._is_filter_admin_authorized():
+            return
+
+        payload = sections_to_payload(load_filter_sections())
+        payload["auth_required"] = bool(self.server.config.filter_admin_password)
+        self._send_json(payload)
+
+    def _save_filter_sections(self) -> None:
+        if not self._is_filter_admin_authorized():
+            return
+
+        payload = self._read_json_body()
+
+        if payload is None:
+            return
+
+        try:
+            sections = sections_from_payload(payload)
+            save_filter_sections(sections)
+            self.server.keyword_terms.refresh()
+        except ValueError as exc:
+            self._send_json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except OSError:
+            self._send_json_error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "No fue posible guardar los filtros.",
+            )
+            return
+
+        response_payload = sections_to_payload(load_filter_sections())
+        response_payload["saved_at"] = datetime.now().isoformat(timespec="seconds")
+        self._send_json(response_payload)
+
+    def _is_filter_admin_authorized(self) -> bool:
+        expected_password = self.server.config.filter_admin_password
+
+        if not expected_password:
+            return True
+
+        received_password = self.headers.get("X-Admin-Password", "")
+
+        if secrets.compare_digest(
+            received_password.encode("utf-8"),
+            expected_password.encode("utf-8"),
+        ):
+            return True
+
+        self._send_json(
+            {
+                "error": "No autorizado.",
+                "auth_required": True,
+            },
+            status=HTTPStatus.UNAUTHORIZED,
+        )
+        return False
+
+    def _read_json_body(self) -> dict | None:
+        raw_length = self.headers.get("Content-Length", "0")
+
+        try:
+            content_length = int(raw_length)
+        except ValueError:
+            self._send_json_error(HTTPStatus.BAD_REQUEST, "Content-Length no valido.")
+            return None
+
+        if content_length > 128_000:
+            self._send_json_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Payload muy grande.")
+            return None
+
+        try:
+            payload = json.loads(self.rfile.read(content_length).decode("utf-8"))
+        except json.JSONDecodeError:
+            self._send_json_error(HTTPStatus.BAD_REQUEST, "JSON no valido.")
+            return None
+
+        if not isinstance(payload, dict):
+            self._send_json_error(HTTPStatus.BAD_REQUEST, "JSON debe ser un objeto.")
+            return None
+
+        return payload
 
     def _send_concursos(self, query: str) -> None:
         params = parse_qs(query)
@@ -161,7 +278,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             for row in rows
             if match_description(
                 row["descripcion"],
-                self.server.keyword_terms,
+                self.server.keyword_terms.get_terms(),
             ).is_relevant
         ]
         filtered_rows = rows
@@ -174,7 +291,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             for row in metric_rows
             if match_description(
                 row["descripcion"],
-                self.server.keyword_terms,
+                self.server.keyword_terms.get_terms(),
             ).is_relevant
         ]
 
@@ -272,6 +389,9 @@ def _limit_rows(rows: list, limit: int | None) -> list:
 
 
 def _content_type_for(path: str) -> str:
+    if path.endswith(".html"):
+        return "text/html; charset=utf-8"
+
     if path.endswith(".css"):
         return "text/css; charset=utf-8"
 
