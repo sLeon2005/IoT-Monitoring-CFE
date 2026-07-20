@@ -24,7 +24,8 @@ from monitor.weather.open_meteo import get_configured_weather, weather_disabled_
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = (PACKAGE_DIR / "static").resolve()
-RELEVANT_VIEW_WINDOW_DAYS = 5
+DEFAULT_CONCURSOS_LIMIT = 25
+RELEVANT_VIEW_WINDOW_DAYS = 8
 
 
 class DashboardServer(ThreadingHTTPServer):
@@ -369,7 +370,7 @@ def _parse_limit(value: str) -> int:
     try:
         limit = int(value)
     except ValueError:
-        return 100
+        return DEFAULT_CONCURSOS_LIMIT
 
     return max(1, min(limit, 200))
 

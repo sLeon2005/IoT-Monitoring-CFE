@@ -250,7 +250,7 @@ No agregar monto/proveedor al dashboard salvo que el usuario lo pida explicitame
 
 APIs actuales del dashboard:
 
-- `GET /api/concursos?date=YYYY-MM-DD&view=all|relevant&limit=100`
+- `GET /api/concursos?date=YYYY-MM-DD&view=all|relevant&limit=25`
 - `GET /api/dashboard/state`
 - `POST /api/dashboard/mode/next`
 - `GET /api/stats/recent-publications`

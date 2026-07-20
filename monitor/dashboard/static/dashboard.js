@@ -80,7 +80,7 @@ const ENTITY_DISPLAY_NAMES = {
 async function loadConcursos() {
   try {
     dashboardView = selectedView || (await loadDashboardState());
-    const params = new URLSearchParams({ limit: "100" });
+    const params = new URLSearchParams({ limit: "25" });
 
     if (selectedDate) {
       params.set("date", selectedDate);
@@ -116,7 +116,7 @@ async function ensureRelevantCount(payload) {
     return;
   }
 
-  const params = new URLSearchParams({ limit: "100", view: "relevant" });
+  const params = new URLSearchParams({ limit: "25", view: "relevant" });
 
   if (selectedDate) {
     params.set("date", selectedDate);
@@ -250,7 +250,7 @@ function render(payload) {
     const latest = items[0];
     const latestDate = parseDate(latest.fecha_publicacion || latest.detectado_en);
     metricLast.textContent = latestDate ? formatDateTime(latestDate.toISOString()) : "--";
-    updateActivityStatus(latestDate);
+    updateActivityStatus(latestDate, isRelevantView);
     body.innerHTML = renderRows(items, isRelevantView);
   }
 
@@ -266,7 +266,7 @@ function renderTableMode({ view, dateRange }) {
 
   tableMode.textContent =
     view === "relevant"
-      ? `Mostrando relevantes \u00faltimos ${rangeDays} d\u00edas`
+      ? "Mostrando relevantes recientes"
       : "Mostrando todos los concursos";
 }
 
@@ -295,7 +295,7 @@ function renderRecentPublicationStats(payload) {
   );
   const maxCount = Math.max(1, ...normalizedDays.map((day) => Number(day.count) || 0));
 
-  activityTotal.textContent = `${total} ${total === 1 ? "concurso" : "concursos"}`;
+  activityTotal.innerHTML = `ÚLTIMOS 7 DÍAS: <span class="activity-count-number">${total}</span> ${pluralizeConcursos(total).toUpperCase()} EN TOTAL`;
 
   activityBars.innerHTML = normalizedDays
     .map((day) => {
@@ -445,7 +445,7 @@ function setMetricSource(value) {
   }
 }
 
-function updateActivityStatus(latestDate) {
+function updateActivityStatus(latestDate, isRelevantView = false) {
   if (!latestDate) {
     statusLabel.textContent = "Fecha no disponible";
     statusDetail.textContent = "Último concurso sin fecha";
@@ -456,14 +456,16 @@ function updateActivityStatus(latestDate) {
   const minutes = Math.floor((Date.now() - latestDate.getTime()) / 60000);
   statusDetail.textContent = `ÚLTIMO CONCURSO HACE ${formatAge(minutes)}`;
 
-  if (minutes < 15) {
+  if (minutes < 60) {
     statusLabel.textContent = "Actividad reciente";
     statusDot.style.background = "var(--green)";
-  } else if (minutes < 90) {
+  } else if (minutes <= 180) {
     statusLabel.textContent = "Actividad moderada";
     statusDot.style.background = "var(--yellow)";
   } else {
-    statusLabel.textContent = "Sin concursos recientes";
+    statusLabel.textContent = isRelevantView
+      ? "Sin concursos relevantes recientes"
+      : "Sin concursos recientes";
     statusDot.style.background = "var(--red)";
   }
 }

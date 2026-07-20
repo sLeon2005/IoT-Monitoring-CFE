@@ -1,9 +1,11 @@
 :root {
   color-scheme: dark;
   --bg: #071014;
-  --panel: #0f1b21;
-  --panel-strong: #14252d;
-  --row-band: #13232a;
+  --panel: #0f1b20;
+  
+  --panel-strong: #172b33;
+  
+  --row-band: #172b33;
   --line: #2a3a42;
   --text: #f2f7f8;
   --muted: #9fb1b8;
@@ -248,20 +250,15 @@ h1 {
 }
 
 .activity-total {
-  color: var(--text);
+  color: var(--muted);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 400;
   white-space: nowrap;
 }
 
-.activity-total::before {
-  content: "";
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  margin: 0 10px 2px 0;
-  border-radius: 999px;
-  background: var(--muted);
+.activity-count-number {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .activity-bars {
