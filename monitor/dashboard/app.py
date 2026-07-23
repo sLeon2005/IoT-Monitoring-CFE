@@ -17,7 +17,11 @@ from monitor.filter_catalog import (
     sections_from_payload,
     sections_to_payload,
 )
-from monitor.filtering import KeywordTermStore, match_description
+from monitor.filtering import (
+    DEFAULT_INCLUDE_KEYWORDS_PATH,
+    KeywordTermStore,
+    match_description,
+)
 from monitor.notifications.reconcile import reconcile_relevant_notifications
 from monitor.system.network import get_wifi_status
 from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
@@ -62,6 +66,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_url.path == "/api/admin/filters":
             self._send_filter_sections()
+            return
+
+        if parsed_url.path == "/api/admin/filters/download":
+            self._send_filter_download()
             return
 
         if parsed_url.path == "/api/admin/filters/status":
@@ -153,6 +161,29 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         payload = sections_to_payload(load_filter_sections())
         payload["auth_required"] = bool(self.server.config.filter_admin_password)
         self._send_json(payload)
+
+    def _send_filter_download(self) -> None:
+        if not self._is_filter_admin_authorized():
+            return
+
+        try:
+            content = DEFAULT_INCLUDE_KEYWORDS_PATH.read_bytes()
+        except FileNotFoundError:
+            content = b""
+        except OSError:
+            self._send_json_error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "No fue posible leer include.txt.",
+            )
+            return
+
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Disposition", 'attachment; filename="include.txt"')
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
 
     def _save_filter_sections(self) -> None:
         if not self._is_filter_admin_authorized():

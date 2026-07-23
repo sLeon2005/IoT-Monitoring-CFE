@@ -5,6 +5,7 @@ const summary = document.querySelector("#summary");
 const saveState = document.querySelector("#save-state");
 const editor = document.querySelector("#sections-editor");
 const addSectionButton = document.querySelector("#add-section-button");
+const downloadButton = document.querySelector("#download-button");
 const saveButton = document.querySelector("#save-button");
 const sectionTemplate = document.querySelector("#section-template");
 
@@ -47,7 +48,7 @@ async function loadFilters() {
 
     if (response.status === 401) {
       authPanel.hidden = false;
-      setMessage("Ingresa la contraseña para editar filtros.", true);
+      showAuthError("editar filtros");
       return;
     }
 
@@ -59,6 +60,7 @@ async function loadFilters() {
     renderSections(Array.isArray(payload.sections) ? payload.sections : []);
     updateSummary();
     dirty = false;
+    passwordInput.removeAttribute("aria-invalid");
     setMessage("Sin cambios pendientes", false);
   } catch (error) {
     setMessage("No fue posible cargar los filtros.", true);
@@ -96,9 +98,9 @@ function createSectionElement(name, terms) {
     markDirty();
   });
   removeButton.addEventListener("click", () => {
-    const sectionName = nameInput.value.trim() || "esta sección";
+    const sectionName = nameInput.value.trim() || "esta seccion";
     const confirmed = window.confirm(
-      `¿Confirmas que deseas eliminar ${sectionName}? Esta acción quitará la sección y sus términos del editor.`,
+      `Confirmas que deseas eliminar ${sectionName}? Esta accion quitara la seccion y sus terminos del editor.`,
     );
 
     if (!confirmed) {
@@ -166,7 +168,7 @@ async function saveFilters() {
 
     if (response.status === 401) {
       authPanel.hidden = false;
-      setMessage("Contraseña incorrecta.", true);
+      showAuthError("guardar cambios");
       return;
     }
 
@@ -179,9 +181,47 @@ async function saveFilters() {
     renderSections(Array.isArray(payload.sections) ? payload.sections : []);
     updateSummary();
     dirty = false;
+    passwordInput.removeAttribute("aria-invalid");
     setMessage(formatSaveMessage(payload.notification_reconcile), false, true);
   } catch (error) {
     setMessage(error.message || "No fue posible guardar.", true);
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function downloadIncludeFile() {
+  setBusy(true);
+
+  try {
+    const response = await fetch("/api/admin/filters/download", {
+      cache: "no-store",
+      headers: getHeaders(),
+    });
+
+    if (response.status === 401) {
+      authPanel.hidden = false;
+      showAuthError("descargar include.txt");
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "include.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    passwordInput.removeAttribute("aria-invalid");
+    setMessage("include.txt descargado.", false, true);
+  } catch (error) {
+    setMessage("No fue posible descargar include.txt.", true);
   } finally {
     setBusy(false);
   }
@@ -217,9 +257,22 @@ function setMessage(message, isError, isOk = false) {
   saveState.classList.toggle("is-ok", Boolean(isOk));
 }
 
+function showAuthError(action) {
+  const hasPassword = passwordInput.value.trim().length > 0;
+  const message = hasPassword
+    ? "Contrasena incorrecta."
+    : `Ingresa la contrasena para ${action}.`;
+
+  passwordInput.setAttribute("aria-invalid", "true");
+  passwordInput.focus();
+  passwordInput.select();
+  setMessage(message, true);
+}
+
 function setBusy(isBusy) {
   saveButton.disabled = isBusy;
   addSectionButton.disabled = isBusy;
+  downloadButton.disabled = isBusy;
   unlockButton.disabled = isBusy;
 }
 
@@ -229,13 +282,17 @@ addSectionButton.addEventListener("click", () => {
 });
 
 saveButton.addEventListener("click", saveFilters);
+downloadButton.addEventListener("click", downloadIncludeFile);
 
 unlockButton.addEventListener("click", () => {
   adminPassword = passwordInput.value;
+  passwordInput.removeAttribute("aria-invalid");
   loadFilters();
 });
 
 passwordInput.addEventListener("keydown", (event) => {
+  passwordInput.removeAttribute("aria-invalid");
+
   if (event.key === "Enter") {
     adminPassword = passwordInput.value;
     loadFilters();

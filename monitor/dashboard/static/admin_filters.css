@@ -212,6 +212,11 @@ textarea {
   resize: vertical;
 }
 
+input[aria-invalid="true"] {
+  border-color: var(--red);
+  outline: 2px solid rgba(243, 91, 91, 0.3);
+}
+
 .remove-section {
   color: #ffd7d7;
 }
