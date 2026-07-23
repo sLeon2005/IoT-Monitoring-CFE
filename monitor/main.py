@@ -17,6 +17,10 @@ from monitor.notifications.dispatcher import (
 )
 from monitor.notifications.outbox import OutboxConcursoNotifier
 from monitor.notifications.relevant import RelevantConcursoNotifier
+from monitor.notifications.reconcile import (
+    NotificationReconcileResult,
+    reconcile_relevant_notifications,
+)
 from monitor.notifications.telegram import TelegramNotifier
 from monitor.polling import build_poll_dates
 
@@ -28,22 +32,25 @@ def build_notifiers(
     config: MonitorConfig,
     repository: ConcursoRepository,
 ):
-    if config.telegram_enabled:
-        keyword_terms = load_keyword_terms()
-        outbox_notifier = OutboxConcursoNotifier(
-            repository=repository,
-            channel="telegram",
-        )
-        return [
-            RelevantConcursoNotifier(
-                notifier=outbox_notifier,
-                terms=keyword_terms,
-                term_store=KeywordTermStore(),
-            )
-        ]
+    keyword_terms = load_keyword_terms()
+    outbox_notifier = OutboxConcursoNotifier(
+        repository=repository,
+        channel="telegram",
+    )
 
-    logger.info("Telegram deshabilitado: faltan credenciales.")
-    return []
+    if not config.telegram_enabled:
+        logger.info(
+            "Envio Telegram deshabilitado: faltan credenciales. "
+            "Los concursos relevantes se conservaran pendientes en outbox."
+        )
+
+    return [
+        RelevantConcursoNotifier(
+            notifier=outbox_notifier,
+            terms=keyword_terms,
+            term_store=KeywordTermStore(),
+        )
+    ]
 
 
 def build_notification_dispatcher(
@@ -126,6 +133,7 @@ def main() -> None:
     retried_with_browser_session = False
 
     while True:
+        reconcile_relevant_notification_outbox(repository)
         pre_poll_dispatch = dispatch_pending_notifications(notification_dispatcher)
 
         if monitor is None:
@@ -285,6 +293,20 @@ def dispatch_pending_notifications(
     return result
 
 
+def reconcile_relevant_notification_outbox(
+    repository: ConcursoRepository,
+) -> NotificationReconcileResult | None:
+    try:
+        return reconcile_relevant_notifications(
+            repository=repository,
+            terms=load_keyword_terms(),
+            channel="telegram",
+        )
+    except Exception:
+        logger.exception("Error conciliando concursos relevantes con outbox Telegram.")
+        return None
+
+
 def _cycle_status_message(
     event_count: int,
     dispatch_result: NotificationDispatchResult | None,
@@ -340,8 +362,30 @@ def notify_existing_latest(
         bot_token=config.telegram_bot_token,
         chat_id=config.telegram_chat_id,
     )
-    notifier.send_new_concurso(concurso)
-    print(f"Concurso existente enviado por Telegram: {concurso.numero}")
+    repository.enqueue_notification(concurso_id=concurso.id, channel="telegram")
+    dispatcher = NotificationDispatcher(
+        repository=repository,
+        notifier=notifier,
+        channel="telegram",
+        batch_limit=1000,
+    )
+    dispatcher.dispatch_due()
+    notification_status = repository.get_notification_status(
+        concurso_id=concurso.id,
+        channel="telegram",
+    )
+
+    if notification_status and notification_status["status"] == "sent":
+        print(f"Concurso existente enviado por Telegram: {concurso.numero}")
+        return
+
+    if notification_status and notification_status["status"] == "failed":
+        raise SystemExit(
+            "No fue posible enviar Telegram despues de los reintentos configurados. "
+            "Revisa notification_outbox.last_error."
+        )
+
+    print(f"Concurso existente pendiente en outbox Telegram: {concurso.numero}")
 
 
 if __name__ == "__main__":

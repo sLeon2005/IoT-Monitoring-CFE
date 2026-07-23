@@ -179,7 +179,7 @@ async function saveFilters() {
     renderSections(Array.isArray(payload.sections) ? payload.sections : []);
     updateSummary();
     dirty = false;
-    setMessage("Cambios guardados.", false, true);
+    setMessage(formatSaveMessage(payload.notification_reconcile), false, true);
   } catch (error) {
     setMessage(error.message || "No fue posible guardar.", true);
   } finally {
@@ -191,6 +191,18 @@ function updateSummary() {
   const sections = collectSectionsForSummary();
   const termCount = sections.reduce((total, section) => total + section.terms.length, 0);
   summary.textContent = `${sections.length} secciones, ${termCount} terminos`;
+}
+
+function formatSaveMessage(reconcile) {
+  if (!reconcile || !Number.isFinite(reconcile.enqueued)) {
+    return "Cambios guardados.";
+  }
+
+  if (reconcile.enqueued === 0) {
+    return "Cambios guardados. Sin concursos historicos nuevos para Telegram.";
+  }
+
+  return `Cambios guardados. ${reconcile.enqueued} concursos historicos pendientes para Telegram.`;
 }
 
 function markDirty() {

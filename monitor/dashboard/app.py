@@ -18,6 +18,7 @@ from monitor.filter_catalog import (
     sections_to_payload,
 )
 from monitor.filtering import KeywordTermStore, match_description
+from monitor.notifications.reconcile import reconcile_relevant_notifications
 from monitor.system.network import get_wifi_status
 from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
 
@@ -165,7 +166,12 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         try:
             sections = sections_from_payload(payload)
             save_filter_sections(sections)
-            self.server.keyword_terms.refresh()
+            terms = self.server.keyword_terms.refresh()
+            reconcile_result = reconcile_relevant_notifications(
+                repository=self.server.repository,
+                terms=terms,
+                channel="telegram",
+            )
         except ValueError as exc:
             self._send_json_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
@@ -178,6 +184,13 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         response_payload = sections_to_payload(load_filter_sections())
         response_payload["saved_at"] = datetime.now().isoformat(timespec="seconds")
+        response_payload["notification_reconcile"] = {
+            "channel": "telegram",
+            "evaluated": reconcile_result.evaluated,
+            "relevant": reconcile_result.relevant,
+            "enqueued": reconcile_result.enqueued,
+            "already_queued": reconcile_result.already_queued,
+        }
         self._send_json(response_payload)
 
     def _is_filter_admin_authorized(self) -> bool:

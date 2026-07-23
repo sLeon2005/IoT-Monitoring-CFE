@@ -171,6 +171,18 @@ class ConcursoRepository:
 
         return self._row_to_concurso(rows[0])
 
+    def list_all_concursos(self) -> list[Concurso]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM concursos
+                ORDER BY COALESCE(fecha_publicacion, detectado_en) DESC
+                """
+            ).fetchall()
+
+        return [self._row_to_concurso(row) for row in rows]
+
     def list_by_publication_date(
         self,
         fecha_publicacion: str,
@@ -407,6 +419,35 @@ class ConcursoRepository:
             ).fetchall()
 
         return {row["status"]: row["total"] for row in rows}
+
+    def get_notification_status(
+        self,
+        *,
+        concurso_id: int,
+        channel: str,
+    ) -> dict[str, str | int | None] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT status, attempts, next_attempt_at, last_error, sent_at
+                FROM notification_outbox
+                WHERE concurso_id = ?
+                  AND channel = ?
+                LIMIT 1
+                """,
+                (concurso_id, channel),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return {
+            "status": row["status"],
+            "attempts": row["attempts"],
+            "next_attempt_at": row["next_attempt_at"],
+            "last_error": row["last_error"],
+            "sent_at": row["sent_at"],
+        }
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
