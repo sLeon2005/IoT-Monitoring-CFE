@@ -27,6 +27,8 @@ astilladora
 reconectador
 reconectadores
 reconectador monofasico
+herramienta
+herramientas
 
 # Equipo de proteccion personal
 
@@ -216,3 +218,8 @@ tarjetas de escalamiento
 
 transformador
 transformadores
+
+# Trabajos en alturas
+
+arnes
+arneses
