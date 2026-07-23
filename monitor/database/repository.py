@@ -285,6 +285,29 @@ class ConcursoRepository:
             "updated_at": values.get("updated_at"),
         }
 
+    def set_monitor_value(self, key: str, value: str) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO monitor_status(key, value)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """,
+                (key, value),
+            )
+
+    def get_monitor_value(self, key: str) -> str | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT value FROM monitor_status WHERE key = ? LIMIT 1",
+                (key,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return row["value"]
+
     def enqueue_notification(
         self,
         concurso_id: int,

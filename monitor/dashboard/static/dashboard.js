@@ -17,6 +17,7 @@ const wifiSsid = document.querySelector("#wifi-ssid");
 const activityBars = document.querySelector("#activity-bars");
 const activityTotal = document.querySelector("#activity-total");
 const tableMode = document.querySelector("#table-mode");
+const systemHealthTag = document.querySelector("#system-health-tag");
 
 const placeholderWeather = {
   icon: "unknown",
@@ -268,6 +269,24 @@ function renderTableMode({ view, dateRange }) {
     view === "relevant"
       ? "Mostrando relevantes recientes"
       : "Mostrando todos los concursos";
+}
+
+async function loadSystemHealth() {
+  if (!systemHealthTag) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/system/health", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    renderSystemHealth(await response.json());
+  } catch (error) {
+    systemHealthTag.textContent = "-- C | -- | total --";
+  }
 }
 
 function renderMetricCounts({ totalCount, relevantCount }) {
@@ -621,9 +640,49 @@ function normalizeWifiBars(value) {
   return Math.max(0, Math.min(3, Math.round(bars)));
 }
 
+function renderSystemHealth(health) {
+  if (!systemHealthTag) {
+    return;
+  }
+
+  const temperature = toFiniteNumber(health?.temperature_c);
+  const uptimeSeconds = toFiniteNumber(health?.uptime_seconds);
+  const totalUptimeSeconds = toFiniteNumber(health?.total_uptime_seconds);
+  const temperatureText = temperature !== null
+    ? `${Math.round(temperature)}C`
+    : "-- C";
+  const uptimeText = uptimeSeconds !== null
+    ? formatCompactDuration(uptimeSeconds)
+    : "--";
+  const totalText = totalUptimeSeconds !== null
+    ? `${Math.floor(totalUptimeSeconds / 3600)}h`
+    : "--";
+
+  systemHealthTag.textContent = `${temperatureText} | ${uptimeText} | total ${totalText}`;
+}
+
+function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatCompactDuration(seconds) {
+  const totalMinutes = Math.max(0, Math.floor(seconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours}h ${minutes}m`;
+}
+
 loadConcursos();
 loadRecentPublicationStats();
 loadWifiStatus();
+loadSystemHealth();
 loadWeather();
 updateClock();
 renderWeather(placeholderWeather);
@@ -631,5 +690,6 @@ renderWeather(placeholderWeather);
 setInterval(loadConcursos, refreshSeconds * 1000);
 setInterval(loadRecentPublicationStats, refreshSeconds * 1000);
 setInterval(loadWifiStatus, 30000);
+setInterval(loadSystemHealth, 60000);
 setInterval(() => loadWeather(), weatherRefreshSeconds * 1000);
 setInterval(updateClock, 1000);

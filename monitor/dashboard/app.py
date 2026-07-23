@@ -23,6 +23,7 @@ from monitor.filtering import (
     match_description,
 )
 from monitor.notifications.reconcile import reconcile_relevant_notifications
+from monitor.system.health import get_system_health
 from monitor.system.network import get_wifi_status
 from monitor.weather.open_meteo import get_configured_weather, weather_disabled_snapshot
 
@@ -94,6 +95,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_url.path == "/api/system/wifi":
             self._send_json(get_wifi_status())
+            return
+
+        if parsed_url.path == "/api/system/health":
+            self._send_json(get_system_health(self.server.repository))
             return
 
         if parsed_url.path == "/api/weather":
